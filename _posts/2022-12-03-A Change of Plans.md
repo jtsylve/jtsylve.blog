@@ -9,7 +9,7 @@ title: 2022 APFS Advent Challenge - A Change of Plans
 
 It turns out that this advent challenge is much more challenging than anticipated!  The pressures of having to prepare a post per day without having written them ahead of time are proving to be a detriment to my work-life balance (especially since the semester hasn't yet ended and so I'm still teaching night classes after work).  
 
-To ensure content quality, and for the sake of my own mental health, I've decided to modify the terms of the challenge.  Rather than releasing a post every day between the 1st and 24th of December, I will only release posts on Monday-Friday, but I will extend the challenge until the end of December.
+To preserve content quality, and for the sake of my own mental health, I've decided to modify the terms of the challenge.  Rather than releasing a post every day between the 1st and 24th of December, I will only release posts on Monday-Friday, but I will extend the challenge until the end of December.
 
 {:i2: style="max-width: 750px; margin: 0 auto"}
 ![$200 donation to Ukraine Humanitarian Fund](/images/advent2022/donate1.png)

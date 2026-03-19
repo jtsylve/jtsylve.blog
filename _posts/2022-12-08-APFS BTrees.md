@@ -13,7 +13,7 @@ B-Trees are used in APFS to store and reference many different objects and data 
 
 ## On-Disk Structure and Layout
 
-There are two types of APFS B-Tree node objects, and their layer differs slightly: _B-Tree Root Node Objects_ and _B-Tree Node Objects_.  Traversal of APFS B-Trees must start from a Root Node Object because nodes only store references to their children, not their siblings.
+There are two types of APFS B-Tree node objects, and their layout differs slightly: _B-Tree Root Node Objects_ and _B-Tree Node Objects_.  Traversal of APFS B-Trees must start from a Root Node Object because nodes only store references to their children, not their siblings.
 
 ![Structure of a Root B-Tree Node](/images/advent2022/btree-root-node.png)
 
@@ -23,7 +23,7 @@ Structure of a Root B-Tree Node
 ![Structure of a Non-Root B-Tree Node](/images/advent2022/btree-non-root-node.png)
 
 {: .caption style="font-size: small; font-weight: bold; text-align: center; margin: -25px 0 0 0"}
-Structure of a Non-Root B-Tree  Node
+Structure of a Non-Root B-Tree Node
 
 The layout of _root_ nodes differs from _non-root_ nodes in that they end with a `btree_info_t` structure.  This structure gives information about the entire B-Tree.  To avoid data duplication and to make more efficient use of space, non-root nodes do not store a copy of this information.
 
@@ -40,7 +40,7 @@ typedef struct btree_info_fixed {
 - `bt_flags`: A set of B-Tree node flags
 - `bt_node_size`: The on-disk size, in bytes, of a node in this B-Tree
 - `bt_key_size`: The size of a key, or zero if the keys have variable size
-- `bt_val_size`: The size of a key, or zero if the values have variable size
+- `bt_val_size`: The size of a value, or zero if the values have variable size
 
 ```cpp
 typedef struct btree_info {
@@ -53,7 +53,7 @@ typedef struct btree_info {
 ```
 - `bt_fixed`: Information about the B-tree that doesnʼt change over time
 - `bt_longest_key`: The size (in bytes) of the largest key stored in the tree
-- `bt_longest_value`: The size (in bytes) of the largest value stored in the tree
+- `bt_longest_val`: The size (in bytes) of the largest value stored in the tree
 - `bt_key_count`: The number of keys stored in the B-Tree
 - `bt_node_count`: The number of nodes that make up the B-Tree
 
@@ -104,9 +104,9 @@ typedef struct btree_node_phys {
 - `btn_level`: The number of child levels below this node
 - `btn_nkeys`: The number of keys stored in this node
 - `btn_table_space`: The location of the table of contents relative to the end of the `btree_node_phys_t` structure
-- `btn_free_space`: The location of the table of contents relative to the beginning of the _key area_
-- `brn_key_free_list`: A linked list that tracks free space in the _key area_
-- `brn_val_free_list`: A linked list that tracks free space in the _value area_
+- `btn_free_space`: The location of free space relative to the beginning of the _key area_
+- `btn_key_free_list`: A linked list that tracks free space in the _key area_
+- `btn_val_free_list`: A linked list that tracks free space in the _value area_
 
 #### Node Flags
 
@@ -160,7 +160,7 @@ The area where value data is stored is called the _value area_. For non-root nod
 
 ## Conclusion
 
-B-Trees are tree-like data structures that provide fast access and efficient storage of key/value data.  B-Trees are widely used in APFS and serve several specialized purposes.  
+B-Trees are data structures that provide fast access and efficient storage of key/value data.  B-Trees are widely used in APFS and serve several specialized purposes.  
 
 In the next post, we will continue our discussion of B-Trees and detail methods of enumerating and looking up their referenced objects.
 

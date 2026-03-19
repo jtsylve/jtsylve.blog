@@ -87,7 +87,7 @@ AES-256 encryption support was introduced in PSpice 16.6 (April 2014), alongside
 pip install spice-crypt
 ```
 
-All encryption formats are auto-detected, so decrypting any supported file is straightforward:
+All encryption formats are auto-detected:
 
 ```bash
 # Decrypt any encrypted SPICE model file

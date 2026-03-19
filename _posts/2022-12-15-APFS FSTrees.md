@@ -7,7 +7,7 @@ Each APFS volume has a logical file system stored on disk as a collection of Fil
 
 ## Overview
 
-The File System Tree is a specialized B-Tree that differs in several  ways from the other trees that we’ve discussed so far:
+The File System Tree is a specialized B-Tree that differs in several ways from the other trees that we’ve discussed so far:
 
 1. FS-Trees are _virtual_ B-Trees. Each node in the tree is a _virtual object_ owned by the Volume’s [_Object Map_](/post/2022/12/12/APFS-OMAP). This means that querying the FS-Tree requires using the Object Map to locate each node.
 
@@ -31,7 +31,7 @@ typedef struct j_key {
     uint64_t obj_id_and_type;
 } j_key_t;
 ```
-- `obj_id_and_type`: A bit field that encodes the record's _object identifier_ (in the 60 _least-significant bits_) and _type_ (in the found _most-significant bits_).
+- `obj_id_and_type`: A bit field that encodes the record's _object identifier_ (in the 60 _least-significant bits_) and _type_ (in the four _most-significant bits_).
 
 Keys are ordered first by an _object identifier_ and then by _type_. A File System Object’s records will be stored together sequentially. Search the FS-Tree for the first record with a given identifier and then enumerate subsequent records until reaching one with a different ID.
 

@@ -3,7 +3,7 @@ layout: post
 title: 2022 APFS Advent Challenge Day 18 - Decryption
 ---
 
-Now that we know how to parse the [File System Tree](/post/2022/12/15/APFS-FSTrees), [Analyze Keybags](/post/2022/12/21/APFS-Keybags), and [Unwrap Decryption Keys](/post/2022/12/22/APFS-Wrapped-Keys), it's time to put it all together and learn how to decrypt file system metadata and file data on encrypted volumes in APFS.
+Now that we know how to parse the [File System Tree](/post/2022/12/15/APFS-FSTrees), [analyze keybags](/post/2022/12/21/APFS-Keybags), and [unwrap decryption keys](/post/2022/12/22/APFS-Wrapped-Keys), it's time to put it all together and learn how to decrypt file system metadata and file data on encrypted volumes in APFS.
 
 ## Tweaks
 
@@ -11,13 +11,13 @@ All encryption in APFS is based on the [XTS-AES-128](https://en.wikipedia.org/wi
 
 Knowledge of the AES key alone is not always enough for successful decryption.  If the encrypted block is ever relocated on disk, the data is not guaranteed to be re-encrypted with a new tweak.  In these cases, the tweak can not be inferred based on the block's on-disk location, so we must learn the original tweak value used for encryption.  
 
-## Identifing Encrypted Blocks
+## Identifying Encrypted Blocks
 
 There are primarily two sets of data protected with the APFS _Volume Encryption Key_: [_File System Tree Nodes_](/post/2022/12/15/APFS-FSTrees) and [_File Extents_](/post/2022/12/19/APFS-Data-Streams).  As we've discussed, _File System Tree Nodes_ store the _File System Records_ that contain the file system's metadata, and _File Extents_ contain the bulk of the data stored in a file's _Data Streams_.
 
 ### Encrypted FS-Tree Nodes
 
-A volume's _Object Map_ is never encrypted, but its referenced _virtual objects_ may be, as is the case with FS-Tree Node on encrypted volumes.
+A volume's _Object Map_ is never encrypted, but its referenced _virtual objects_ may be, as is the case with FS-Tree Nodes on encrypted volumes.
 
 Let's revisit the value half of an _Object Map entry_.
 
@@ -29,7 +29,7 @@ typedef struct omap_val {
 } omap_val_t;        // 0x10
 ```
 
-If the `ov_flags` bit-field member has the `OMAP_VAL_ENCRYPTED` flag set, then the virtual object located at `ov_paddr` is encrypted. These objects are never related without being re-encrypted, so the tweak of the first 512 bytes of data can be determined by the physical location of the data using the following logic, with the following tweak values incremented for each subsequent 512 bytes of data:
+If the `ov_flags` bit-field member has the `OMAP_VAL_ENCRYPTED` flag set, then the virtual object located at `ov_paddr` is encrypted. These objects are never relocated without being re-encrypted, so the tweak of the first 512 bytes of data can be determined by the physical location of the data using the following logic, with the following tweak values incremented for each subsequent 512 bytes of data:
 
 ```cpp
 uint64_t tweak0 = (ov_paddr * block_size) / 512;

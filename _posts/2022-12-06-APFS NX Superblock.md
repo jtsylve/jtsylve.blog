@@ -3,7 +3,7 @@ layout: post
 title: 2022 APFS Advent Challenge Day 4 - NX Superblock Objects
 ---
 
-The _NX Superblock Object_ is a crucial component of APFS. It stores key information about the Container, such as the block size, total number of blocks, supported features, and the object IDs of various trees and other structures used to track and maintain other objects. The on-disk `nx_superblock_t` structure is used as the root source of information to locate all other objects in the checkpoint.  In this post, we will go into detail about this structure as well as discuss methodology that can be used to locate them on-disk.
+The _NX Superblock Object_ is a key component of APFS. It stores key information about the Container, such as the block size, total number of blocks, supported features, and the object IDs of various trees and other structures used to track and maintain other objects. The on-disk `nx_superblock_t` structure is used as the root source of information to locate all other objects in the checkpoint.  In this post, we will go into detail about this structure as well as discuss methodology that can be used to locate them on-disk.
 
 ## On-Disk Structures
 
@@ -69,22 +69,22 @@ typedef struct nx_superblock {
 
 `prange_t` structures keep track of contiguous ranges of blocks.  It is used in various other data structures.
 
-- `pr_start_addr`: The physical address of the first block in the range.
+- `pr_start_paddr`: The physical address of the first block in the range.
 - `pr_block_count`: The number of blocks in the range
 
 ### nx_superblock_t
 
-`nx_superblock_t` structures store key information about the Container and act as the root source of information to locate all other objects in the checkpoint.  We'll go in detail of most of these as needed, but below is a brief description of each.
+`nx_superblock_t` structures store key information about the Container and act as the root source of information to locate all other objects in the checkpoint.  We'll go into detail on most of these as needed, but below is a brief description of each.
 
 - `nx_o`: The object's header
-- `nx_magic`: A number that can be used to verify that you're reading an instance of nx_superblock_t.This should always be the value defined by `NX_MAGIC`
+- `nx_magic`: A number that can be used to verify that you're reading an instance of nx_superblock_t. This should always be the value defined by `NX_MAGIC`
 - `nx_block_size`: The logical block size used in the container
 - `nx_block_count`: The total number of blocks in the container
 - `nx_features`: A bit-field of optional features supported by the container
 - `nx_readonly_compatible_features`: A bit-field of optional _read-only_ features supported by the container
 - `nx_incompatible_features`: A bit-field of backwards-incompatible features that are in use
 - `nx_next_oid`: The next object identifier that will be used by a new _virtual_ or _ephemeral_ object
-- `nx_next_oid`: The next transaction identifier that will be used
+- `nx_next_xid`: The next transaction identifier that will be used
 - `nx_xp_desc_blocks`: Encodes the number of blocks in the _Checkpoint Descriptor Area_
 - `nx_xp_data_blocks`: Encodes the number of blocks in the _Checkpoint Data Area_
 - `nx_xp_desc_base`: Encodes information that can be used to locate the ranges of blocks used by the checkpoint descriptor area
@@ -92,9 +92,9 @@ typedef struct nx_superblock {
 - `nx_xp_desc_next`: The next index that will be used in the checkpoint descriptor area
 - `nx_xp_data_next`: The next index that will be used in the checkpoint data area
 - `nx_xp_desc_index`: The index of the first valid item in the checkpoint descriptor area
-- `nx_xp_desc_len`: The number of blocks in the checkpoint descriptor area used by the checkpoint for which this superblock belongs
+- `nx_xp_desc_len`: The number of blocks in the checkpoint descriptor area used by the checkpoint to which this superblock belongs
 - `nx_xp_data_index`: The index of the first valid item in the checkpoint data area
-- `nx_xp_data_len`: The number of blocks in the checkpoint data area used by the checkpoint for which this superblock belongs
+- `nx_xp_data_len`: The number of blocks in the checkpoint data area used by the checkpoint to which this superblock belongs
 - `nx_spaceman_oid`: The ephemeral object identifier of the container's _Space Manager_
 - `nx_omap_oid`: The physical object identifier of the container's _Object Map_
 - `nx_reaper_oid`: The ephemeral object identifier of the container's _Reaper_
@@ -105,7 +105,7 @@ typedef struct nx_superblock {
 - `nx_blocked_out_prange`: A physical range of blocks where space will not be allocated (used when shrinking a partition)
 - `nx_evict_mapping_tree_oid`: The physical object identifier of a tree used to keep track of objects that must be moved out of blocked-out storage. (used when shrinking a partition)
 - `nx_flags`: Miscellaneous container flags
-- `nx_efi_jumpstart`: The physical object identifier of a tree used to keep track of objects that must be moved out of blocked-out storage.
+- `nx_efi_jumpstart`: The physical block address of the EFI boot information object.
 - `nx_fusion_uuid`: The universally unique identifier of the container's Fusion set, or zero for non-Fusion containers
 - `nx_keylocker`: The location of the container's keybag.
 - `nx_ephemeral_info`: An array of fields used in the management of ephemeral data
@@ -148,13 +148,13 @@ Things are a bit more complicated if the MSB is set.  The descriptor area is sto
 
 _We will discuss B-Trees, and how to parse them later this week, but for now it is only necessary to understand that B-Trees in APFS are essentially just ordered key/value stores._  
 
-This particular B-Tree maps `uint64_t` logical starting offsets inside the checkpoint descriptor area to `prange_t` physical block ranges.  Enumerating through the entries in this B-Tree allows us to identify the order and location of each ranges of blocks in the checkpoint descriptor area.
+This particular B-Tree maps `uint64_t` logical starting offsets inside the checkpoint descriptor area to `prange_t` physical block ranges.  Enumerating through the entries in this B-Tree allows us to identify the order and location of each range of blocks in the checkpoint descriptor area.
 
 ### Step 3: Search the Checkpoint Descriptor Area
 
 As discussed in our [last post](/post/2022/12/05/APFS-Containers), the container's _Checkpoint Descriptor Area_ stores two types of objects: _NX Superblocks_ and _Checkpoint Maps_.  These objects can be differentiated by the `o_type` member of their object headers.
 
-Search each range of blocks in the descriptor area, looking for NX Superblock objects.  There should be more than one, which each superblock representing a specific checkpoint.  Validate each superblock as before, and keep track of the _valid_ superblock with the highest _transaction identifier_ (`xid`).  Since NX Superblock objects are the last objects flushed to disk during a checkpoint transaction, this _should_ mean you've located the information needed to parse the most up-to-date state of the container.  If you run into problems parsing information from a container later down the road, you can always try starting from the NX Superblock with the next-highest `xid`.
+Search each range of blocks in the descriptor area, looking for NX Superblock objects.  There should be more than one, with each superblock representing a specific checkpoint.  Validate each superblock as before, and keep track of the _valid_ superblock with the highest _transaction identifier_ (`xid`).  Since NX Superblock objects are the last objects flushed to disk during a checkpoint transaction, this _should_ mean you've located the information needed to parse the most up-to-date state of the container.  If you run into problems parsing information from a container later down the road, you can always try starting from the NX Superblock with the next-highest `xid`.
 
 ## Conclusion
 

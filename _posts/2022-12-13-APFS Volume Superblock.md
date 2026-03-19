@@ -3,7 +3,7 @@ layout: post
 title: 2022 APFS Advent Challenge Day 9 - Volume Superblock Objects
 ---
 
-In this blog post, we will explore the _Volume Superblock_ in APFS, a critical data structure containing important information about an individual APFS volume. We will discuss locating the Volume Superblock on disk and describe some fields in the on-disk format. By the end of this post, you should better understand the volume Superblock’s role in the APFS file system and how to parse its on-disk structure.
+The _Volume Superblock_ is a data structure containing key information about an individual APFS volume. This post covers locating the Volume Superblock on disk and describes the on-disk format’s fields.
 
 ## Locating Volume Superblocks
 
@@ -96,7 +96,7 @@ typedef struct apfs_superblock {
 - `apfs_extentref_tree_oid`: The physical object identifier of the extent-reference tree
 - `apfs_snap_meta_tree_oid`: The physical object identifier of the snapshot metadata tree
 - `apfs_revert_to_xid`: The transaction identifier of a snapshot that the volume will revert to (or zero if not reverting)
-- `apfs_revert_to_sblock_oid`: The physical object identifier of a volume superblock that the volume will revert to (or zero i not reverting)
+- `apfs_revert_to_sblock_oid`: The physical object identifier of a volume superblock that the volume will revert to (or zero if not reverting)
 - `apfs_next_obj_id`: The next identifier that will be assigned to a file-system object in this volume
 - `apfs_num_files`: The number of regular files in this volume
 - `apfs_num_directories`: The number of directories in this volume
@@ -106,7 +106,7 @@ typedef struct apfs_superblock {
 - `apfs_total_blocks_alloced`: The total number of blocks that have been allocated by this volume
 - `apfs_total_blocks_freed`: The total number of blocks that have been freed by this volume
 - `apfs_vol_uuid`: The universally unique identifier for this volume
-- `apfs_last_mod_time`: The universally unique identifier for this volume
+- `apfs_last_mod_time`: The time that this volume was last modified
 - `apfs_fs_flags`: The volume's flags
 - `apfs_formatted_by`: Information about the software that created this volume
 - `apfs_modified_by`: Information about the software that has modified this volume
@@ -217,9 +217,9 @@ typedef struct apfs_modified_by {
 
 - `id`: A string that identifies the program and its version
 - `timestamp`: The time that the program last modified this volume
-- `last_xid`: The time that the program last modified this volume
+- `last_xid`: The transaction identifier of the last transaction committed by this program
 
-# Conclusion
+## Conclusion
 
 Locating and analyzing Volume Superblocks are essential early steps in being able to parse the contents of their file systems.  Our next post will discuss the volume’s File System Tree, a specialized B-Tree that stores the bulk of the file systems’ metadata objects.
 

@@ -3,7 +3,7 @@ layout: post
 title: 2022 APFS Advent Challenge Day 16 - Wrapped Keys
 ---
 
-In our last post, we discussed both [Volume and Container Keybags](/post/2022/12/21/APFS-Keybags and how they protect wrapped _Volume Encryption_ and _Key Encryption Keys_. Depending on whether the encrypted volume was migrated from an HFS+ encrypted [Core Storage](https://en.wikipedia.org/wiki/Core_Storage) volume, there are subtle differences in how these keys are used. In this post, we will discuss the structure of these wrapped keys and how they can be used to access the raw _Volume Encryption Keys_ that encrypt data on the file system.
+In our last post, we discussed both [Volume and Container Keybags](/post/2022/12/21/APFS-Keybags) and how they protect wrapped _Volume Encryption_ and _Key Encryption Keys_. Depending on whether the encrypted volume was migrated from an HFS+ encrypted [Core Storage](https://en.wikipedia.org/wiki/Core_Storage) volume, there are subtle differences in how these keys are used. In this post, we will discuss the structure of these wrapped keys and how they can be used to access the raw _Volume Encryption Keys_ that encrypt data on the file system.
 
 ## Key Encryption Key Blobs
 
@@ -67,7 +67,7 @@ if is_zeroed(kek[16:]) {
 
 ## Volume Encryption Key Blobs
 
-_Volume Encryption Key_ (`VEK`) blobs have a very similar structure to the `KEK` blobs that we just discussed. Depending on if they were migrated from Core Storage, they can also be 128-bit or 256-bit keys.
+_Volume Encryption Key_ (`VEK`) blobs have a very similar structure to the `KEK` blobs that we just discussed. Depending on whether they were migrated from Core Storage, they can also be 128-bit or 256-bit keys.
 
 ```asn1
 VEKBLOB ::= SEQUENCE {
@@ -116,6 +116,6 @@ if vek_size == 16 {
 
 ## Conclusion
 
-In this post, we discussed utilizing the wrapped keys stored in APFS key bags to gain access to the _Volume Encryption Key_ that protects a user's data in APFS. Tomorrow, we will conclude our discussion about APFS encryption by describing how to identify and decrypt protected information using these keys.
+In this post, we discussed using the wrapped keys stored in APFS Keybags to gain access to the _Volume Encryption Key_ that protects a user's data in APFS. Tomorrow, we will conclude our discussion about APFS encryption by describing how to identify and decrypt protected information using these keys.
 
 {% include advent2022.html %}

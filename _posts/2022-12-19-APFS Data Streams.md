@@ -3,7 +3,7 @@ layout: post
 title: 2022 APFS Advent Challenge Day 13 - Data Streams
 ---
 
-Data in APFS that is too large to store within records are stored elsewhere on disk and referenced by _data streams (`dstreams`)_.  Similar to _non-resident attributes_ in NTFS, APFS data streams manage a set of _extents_ that reference the number and order of blocks on the disk which contain external data.  In this post, we will discuss how _data streams_ are used in APFS to manage one or more [forks](https://en.wikipedia.org/wiki/Fork_(file_system)) of data in inodes as well as their record structures in the [_File System Tree_](/post/2022/12/15/APFS-FSTrees).
+Data in APFS that is too large to store within records is stored elsewhere on disk and referenced by _data streams (`dstreams`)_.  Similar to _non-resident attributes_ in NTFS, APFS data streams manage a set of _extents_ that reference the number and order of blocks on the disk which contain external data.  In this post, we will discuss how _data streams_ are used in APFS to manage one or more [forks](https://en.wikipedia.org/wiki/Fork_(file_system)) of data in inodes as well as their record structures in the [_File System Tree_](/post/2022/12/15/APFS-FSTrees).
 
 ## Inode Default Data Streams
 
@@ -16,7 +16,7 @@ typedef struct j_dstream {
     uint64_t default_crypto_id;   // 0x10
     uint64_t total_bytes_written; // 0x18
     uint64_t total_bytes_read;    // 0x20
-} j_stream_t;                     // 0x28
+} j_dstream_t;                     // 0x28
 ```
 - `size`: The size of the logical data (in bytes)
 - `alloced_size`: The total space allocated for the data stream (in bytes), including any unused space
@@ -26,7 +26,7 @@ typedef struct j_dstream {
 
 The logical _size_ and _allocated size_ of a `dstream` may differ.  The _allocated size_ is always a factor of the container's block size.  If the file contents do not fill up the last block, then the _allocated size_ may be larger than the logical _size_.  APFS also allows `dstreams` to be _sparsely allocated_. Some extent ranges that logically contain all zero-bytes may not be stored on disk.  In these instances, the _allocated size_ may be smaller than the logical _size_ of the stream.
 
-The `default_crypto_id` comes in to play when we're dealing with encrypted volumes.  We will discuss more about APFS encryption in a future post.
+The `default_crypto_id` comes into play when we're dealing with encrypted volumes.  We will discuss more about APFS encryption in a future post.
 
 The `total_bytes_written` and `total_bytes_read` fields are performance counters we can use to determine how often a data stream has been read-from or written-to.  They are only periodically updated, and more research is needed to determine what triggers these values to be flushed to disk.  Both values are allowed to overflow and reset from zero, so their utility for forensic analysis is relatively limited.
 
@@ -85,7 +85,7 @@ typedef struct j_xattr_dstream {
 
 ## Data Stream Extents
 
-Except for _Sealed Volumes__ (which we will discuss in the future), the _extents_ of a `dstream` are stored in the volume's _File System Tree_ as a set of records with the type `APFS_TYPE_FILE_EXTENT`.  For streams with non-contiguous data, there will be more than one extent record.
+Except for _Sealed Volumes_ (which we will discuss in the future), the _extents_ of a `dstream` are stored in the volume's _File System Tree_ as a set of records with the type `APFS_TYPE_FILE_EXTENT`.  For streams with non-contiguous data, there will be more than one extent record.
 
 The _file extent record_ keys are of the type `j_file_extent_key_t` and encode the object identifier of the `dstream` in their record header, along with the logical offset of the extent in the stream.
 
@@ -124,6 +124,6 @@ The `crypto_id` field is specific to encrypted volumes and will be discussed in 
 
 ## Conclusion
 
-Understanding _data streams_ and their on-disk structures are essential to analyzing APFS.  This post discussed the _default data stream_, _extended attributes_, and _file extents_.  Later this week, we will discuss how parsing this information differs in both _Sealed_ and _Encrypted_ volumes.
+Understanding _data streams_ and their on-disk structures is essential to analyzing APFS.  This post discussed the _default data stream_, _extended attributes_, and _file extents_.  Later this week, we will discuss how parsing this information differs in both _Sealed_ and _Encrypted_ volumes.
 
 {% include advent2022.html %}

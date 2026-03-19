@@ -7,7 +7,7 @@ Mastering the skill of B-Tree traversal is essential in parsing information from
 
 ## Overview
 
-Traversal of APFS B-Trees always starts at the _root node_, which can be identified by having the `BTNODE_ROOT` bit-flag set in the `bt_flags` field of its `btree_node_phys_t` header. Each B-Tree can only have a single root node. Root nodes only differ from the other nodes in that their storage space is slightly more limited to make room for the `btree_info_fixed_t` structure, which stores information about the entire tree.
+Traversal of APFS B-Trees always starts at the _root node_, which can be identified by having the `BTNODE_ROOT` bit-flag set in the `bt_flags` field of its `btree_node_phys_t` header. Each B-Tree can only have a single root node. Root nodes only differ from the other nodes in that their storage space is slightly more limited to make room for the `btree_info_t` structure, which stores information about the entire tree.
 
 You can visualize an APFS B-Tree as a root node on the highest level, branching downward for each generation of children. The nodes at the lowest level (level-zero) are called _leaf nodes_ and have the `BTNODE_LEAF` bit-flag in their header. Single-level B-Trees consist of a solitary node that is both a root and leaf node. Two-level B-Trees have a single root node whose immediate children are leaf nodes. B-Trees with more than two levels will have intermediary nodes that are neither root nor leaf nodes.
 
@@ -15,7 +15,7 @@ Unique, sortable keys reference each value in a B-Tree. When a B-Tree is created
 
 ## Enumerating B-Trees
 
-APFS B-Tree nodes have three storage areas: the _table space_, the _key area_, and the _value area_.  The table space contains the table of contents -- the table of contents stores the location of each key-value pair within the node. If the `BTNODE_FIXED_KV_SIZE` flag is set in the node’s header flags, the table of contents only stores offsets for keys and values. Otherwise, it also stores their lengths.
+APFS B-Tree nodes have three storage areas: the _table space_, the _key area_, and the _value area_.  The table space contains the table of contents, which stores the location of each key-value pair within the node. If the `BTNODE_FIXED_KV_SIZE` flag is set in the node’s header flags, the table of contents only stores offsets for keys and values. Otherwise, it also stores their lengths.
 
 Identify the location of the table space within the node by reading the `btn_table_space` member of the node's header.  This table space begins at `btn_table_space.off` bytes after the node's header and is `btn_table_space.len` bytes in length.  The remaining storage space in the node is used for the key and value areas.  We will refer to this space collectively as the _k/v area_.  
 
@@ -33,7 +33,7 @@ We could use enumeration to look up a value by its key as with Checkpoint Maps, 
 
 ## Conclusion
 
-Understanding the structure and traversal of APFS B-Trees is crucial for effectively parsing information from this file system. We discuss processes that allow the enumeration of all values in linear time and faster logarithmic-time lookups of specific values.
+Understanding the structure and traversal of APFS B-Trees is essential for effectively parsing information from this file system. We discussed methods for enumerating all values in linear time and performing faster logarithmic-time lookups of specific values.
 
 B-Trees are used in many ways in APFS.  In the next post, we will discuss _Object Map_ B-Trees and how they can be used to access virtual objects.
 

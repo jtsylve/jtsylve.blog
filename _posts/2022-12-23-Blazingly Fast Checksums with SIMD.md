@@ -7,7 +7,7 @@ Today's post will take on a bit of a different style than the previous posts in 
 
 ## SIMD Background
 
-I've recently become interested in learning more about [SIMD](https://en.wikipedia.org/wiki/Single_instruction,_multiple_data) programming and how to utilize it to make my code faster.  SIMD stands for "Single Instruction, Multiple Data." It is a technique used in computer architectures to perform the same operation on multiple data elements in parallel, using a single instruction.
+I've recently become interested in learning more about [SIMD](https://en.wikipedia.org/wiki/Single_instruction,_multiple_data) programming and how to use it to make my code faster.  SIMD stands for "Single Instruction, Multiple Data." It is a technique used in computer architectures to perform the same operation on multiple data elements in parallel, using a single instruction.
 
 Here's an example to help illustrate the concept:
 
@@ -21,10 +21,10 @@ During my journey, I came across some prior work by James D Guilford and Vinodh 
 
 ### Portability Concerns
 
-The authors of the Intel whitepaper use hand-coded [AVX](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions) assembly instructions to perform their vectorization.  OpenZFS seems to have taken the same approach.  They have independent implementations full of inline assembly for Intel's [SSE](https://github.com/openzfs/zfs/blob/303678350a7253c7bee9d6a3347ee1bcdf9cc177/module/zcommon/zfs_fletcher_sse.c), [AVX2](https://github.com/openzfs/zfs/blob/303678350a7253c7bee9d6a3347ee1bcdf9cc177/module/zcommon/zfs_fletcher_intel.c), [AVX-512](https://github.com/openzfs/zfs/blob/303678350a7253c7bee9d6a3347ee1bcdf9cc177/module/zcommon/zfs_fletcher_avx512.c), and ARM's [NEON](https://github.com/openzfs/zfs/blob/303678350a7253c7bee9d6a3347ee1bcdf9cc177/module/zcommon/zfs_fletcher_aarch64_neon.c) architectures.  Apple takes a similar approach.  The Intel version of `apfs.kext` contains an SSE, AVX, and AVX2 vectorized implementations and a fallback serialized version if, for some reason, none of these instruction sets are supported. 
+The authors of the Intel whitepaper use hand-coded [AVX](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions) assembly instructions to perform their vectorization.  OpenZFS seems to have taken the same approach.  They have independent implementations full of inline assembly for Intel's [SSE](https://github.com/openzfs/zfs/blob/303678350a7253c7bee9d6a3347ee1bcdf9cc177/module/zcommon/zfs_fletcher_sse.c), [AVX2](https://github.com/openzfs/zfs/blob/303678350a7253c7bee9d6a3347ee1bcdf9cc177/module/zcommon/zfs_fletcher_intel.c), [AVX-512](https://github.com/openzfs/zfs/blob/303678350a7253c7bee9d6a3347ee1bcdf9cc177/module/zcommon/zfs_fletcher_avx512.c), and ARM's [NEON](https://github.com/openzfs/zfs/blob/303678350a7253c7bee9d6a3347ee1bcdf9cc177/module/zcommon/zfs_fletcher_aarch64_neon.c) architectures.  Apple takes a similar approach.  The Intel version of `apfs.kext` contains SSE, AVX, and AVX2 vectorized implementations and a fallback serialized version if, for some reason, none of these instruction sets are supported. 
 The `arm64` version of the KEXT uses NEON vectorization instructions.
 
-While these approaches work and produce high-performing and optimized code, having to hand-code an implementation for each instruction set seems to defeat the purpose of writing code in a portable language like C++.  Besides, I'm a programmer, and programmers, by our very nature, are lazy.  The compiler knows what it's doing and usually can generate better-performing code that I could hand optimize, so let's find a way to let it do its job.
+While these approaches work and produce high-performing and optimized code, having to hand-code an implementation for each instruction set seems to defeat the purpose of writing code in a portable language like C++.  Besides, I'm a programmer, and programmers, by our very nature, are lazy.  The compiler knows what it's doing and usually can generate better-performing code than I could hand optimize, so let's find a way to let it do its job.
 
 ### C++ TS N4808 and std::experimental::simd
 
@@ -139,7 +139,7 @@ NEON | 368ns | 10.3417 GiB/s | 1.2x
 
 ## Conclusion
 
-For the proper application, SIMD vectorization can provide fantastic performance benefits.  In my testing, I demonstrated a 6x speedup and hashed APFS objects at over 31 Gigabytes per second on an iMac Pro from 2017!  The proposed SIMD additions to the C++ standard library are easy to use and generate high-performing, portable code.   I absolutely will be using this whenever I can.
+For the proper application, SIMD vectorization can provide fantastic performance benefits.  In my testing, I demonstrated a 6x speedup and hashed APFS objects at over 31 GiB/s on an iMac Pro from 2017!  The proposed SIMD additions to the C++ standard library are easy to use and generate high-performing, portable code.   I absolutely will be using this whenever I can.
 
 ### Update (December 24, 2022)
 

@@ -7,7 +7,7 @@ APFS is a _pooled storage_, _transactional_, _copy-on-write_ file system.  Its d
 
 ## History
 
-Prior to the introduction of APFS, Apple's primary file system of choice was [HFS+](https://en.wikipedia.org/wiki/HFS_Plus).  HFS+ is a  _journaling file system_ that was introduced by Apple in 1998 as an improvement over its legacy HFS file system. 
+Prior to the introduction of APFS, Apple's primary file system of choice was [HFS+](https://en.wikipedia.org/wiki/HFS_Plus).  HFS+ is a _journaling file system_ that was introduced by Apple in 1998 as an improvement over its legacy HFS file system. 
 
 Like most file systems of its era, each HFS+ volume can only manage the space of a single physical disk partition.  While it is possible to have more than one HFS+ volume on a disk, the limitation of "one volume per partition" requires that the storage space for each volume be fixed and pre-allocated.  This means that HFS+ volumes that are low on storage space cannot make use of any available free space elsewhere on disk.
 
@@ -26,7 +26,7 @@ APFS containers provide pooled and tiered storage capabilities, without the need
 
 It supports storage devices as small as 1 MiB in size (APFS on a 1.44 MiB HD floppy, anyone?) and has no apparent upper storage limit.  It supports the sharing of blocks among as many as 100 volumes (with some limitations).  In addition to that hard-coded upper maximum of 100 volumes, APFS requires that there can be no more than one volume per 512 MiB of storage space.  This helps limit storage contention and reduces the amount of space needed to maintain file system metadata on-disk.
 
-The Space Manager instance keep track of which blocks across storage tiers are in-use.  It also is responsible for the allocation and freeing of blocks for volumes on-demand.
+The Space Manager keeps track of which blocks across storage tiers are in-use.  It is also responsible for the allocation and freeing of blocks for volumes on-demand.
 
 ## Checkpoint Areas
 
@@ -34,7 +34,7 @@ As mentioned in [last Friday's post](/post/2022/12/02/Kinds-of-APFS-Objects), AP
 
 APFS containers maintain two distinct checkpoint areas. The _Checkpoint Data Area_, which is reserved for storage of _ephemeral_ objects, and the _Checkpoint Descriptor Area_. 
 
-The Checkpoint Descriptor Area provides a logically (but not necessarily physically) contiguous area on disk that is reserved to act as a [circular buffer](https://en.wikipedia.org/wiki/Circular_buffer) to store two types of objects that used to parse information about checkpoints: _Checkpoint Map Objects_ and _NX Superblock Objects_.  
+The Checkpoint Descriptor Area provides a logically (but not necessarily physically) contiguous area on disk that is reserved to act as a [circular buffer](https://en.wikipedia.org/wiki/Circular_buffer) to store two types of objects that are used to store information about checkpoints: _Checkpoint Map Objects_ and _NX Superblock Objects_.  
 
 After a checkpoint is flushed to disk, both types of objects are written to the descriptor area.  The Checkpoint Map Objects provide a list of all ephemeral objects, their types, and their storage location within the checkpoint data area.  A NX Superblock object is written to the descriptor area buffer after the map objects.  This superblock is the root object of APFS and serves as the initial source of information about the state of the container in each checkpoint.  All other valid objects in APFS are either directly or indirectly reachable from the NX superblock object.
 

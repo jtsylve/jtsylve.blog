@@ -5,7 +5,7 @@ title: "Update: Blazingly Fast-er SIMD Checksums"
 
 This is a quick update to [yesterday's post](/post/2022/12/23/Blazingly-Fast-Checksums-with-SIMD) on using [`std::experimental::simd`](https://en.cppreference.com/w/cpp/experimental/simd/simd) to speed up APFS Fletcher-64 calculations.  It turns out that there were still some low-hanging optimizations that could be used to improve my code.  I got better performance from my code by using a simple [loop unrolling](https://en.wikipedia.org/wiki/Loop_unrolling) technique.
 
-Here's the new version of the function.  Notice that the only difference is that I'm now calculating more data per iteration of the loop.  I'm using a lambda here to avoid code de-duplication, but the compiler will gladly inline the code.
+Here's the new version of the function.  Notice that the only difference is that I'm now calculating more data per iteration of the loop.  I'm using a lambda here to avoid code duplication, but the compiler will gladly inline the code.
 
 ```cpp
 static uint64_t fletcher64_simd(std::span<const uint32_t, 1024> words) {

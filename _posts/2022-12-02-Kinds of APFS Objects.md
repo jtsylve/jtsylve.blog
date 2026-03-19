@@ -17,7 +17,7 @@ Because physical objects use direct addressing, there can only ever be one versi
 
 ## Virtual Objects
 
-_Virtual Objects_ represent the majority of all objects in APFS.  They are not stored at fixed locations on disk, and do not have direct relationships between their `oid` and storage location.  All virtual objects are "owned" by an _Object Map_ (`OMAP`).  OMAPs are tree-like structures that are used to manage the lifetimes of virtual objects and are used to lookup the their block-storage location on physical.  You can look forward to a detailed discussion of object maps in a future post in this series.  Suffice it to say that OMAPs are key/value stores that allow you to efficiently locate a virtual object's blocks by using it's `oid` and `xid` as keys.
+_Virtual Objects_ represent the majority of all objects in APFS.  They are not stored at fixed locations on disk, and do not have direct relationships between their `oid` and storage location.  All virtual objects are "owned" by an _Object Map_ (`OMAP`).  OMAPs are tree-like structures that are used to manage the lifetimes of virtual objects and are used to look up their block-storage location on disk.  You can look forward to a detailed discussion of object maps in a future post in this series.  Suffice it to say that OMAPs are key/value stores that allow you to efficiently locate a virtual object's blocks by using its `oid` and `xid` as keys.
 
 This indirect mapping of virtual objects allows for quite a bit of flexibility.  Because they are not limited to a fixed block-address, virtual objects can be relocated on disk at any time by updating their storage location in their object map.  
 
@@ -31,10 +31,10 @@ The copy-on-write nature of APFS objects is great for fault tolerance.  For exam
 
 Of course, `CoW` comes at a cost.  There are some objects that need to be updated much too frequently to be flushed to disk as part of a transaction on every change.  These frequently-updated objects also tend to not require strict data integrity guarantees or strong fault tolerances.  Two prime examples are the objects that track performance counters and garbage collection state.
 
-Some objects require no persistence at all and are only resident in-memory.  Since we won't find those on disk, we don't need to be concerned with them at the moment.  Other's spend the majority of their lifetimes in-memory when APFS is mounted and are only flushed to disk periodically (or when APFS is cleanly unmounted) for persistence.  These types of objects are known as _ephemeral_.
+Some objects require no persistence at all and are only resident in-memory.  Since we won't find those on disk, we don't need to be concerned with them at the moment.  Others spend the majority of their lifetimes in-memory when APFS is mounted and are only flushed to disk periodically (or when APFS is cleanly unmounted) for persistence.  These types of objects are known as _ephemeral_.
 
 Like virtual objects, ephemeral objects are not located at fixed locations on disk and there is no direct mapping between `oid` and storage blocks.  Ephemeral objects are "owned" by _checkpoint maps_, which are responsible for managing their on-disk lifetime and providing translation capabilities between `oid` and on-disk storage locations (more on these in the future).
 
-Given that we have limited guarantees about when and how often these objects are flushed to disk, ephemeral objects are limited to only those that are not critical to preserving the integrity of users' data, and that can be reconstructed entirely (or from previous versions) on-demand.  Still, Ephemeral objects play an important role in APFS.  We will discuss several of the kinds of objects throughout this series.
+Given that we have limited guarantees about when and how often these objects are flushed to disk, ephemeral objects are limited to only those that are not critical to preserving the integrity of users' data, and that can be reconstructed entirely (or from previous versions) on-demand.  Still, ephemeral objects play an important role in APFS.  We will discuss several of the kinds of objects throughout this series.
 
 {% include advent2022.html %}

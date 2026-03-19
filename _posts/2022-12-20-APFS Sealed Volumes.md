@@ -50,7 +50,7 @@ APFS_HASH_SHA512 | 0x4 | The SHA-512 variant of Secure Hash Algorithm 2
 
 ## File System Tree
 
-_Sealed Volumes_ can ensure integrity by hashing the contents of their [_File System Trees_](/post/2022/12/15/APFS-FSTrees).  This hashing necessitates some slight differences to the B-Tree. These modified B-Trees can be identified by the `BTREE_HASHED` and `BTREE_NOHEADER` flags being set in their [_B-Tree Info_](/post/2022/12/08/APFS-BTrees).
+_Sealed Volumes_ verify integrity by hashing the contents of their [_File System Trees_](/post/2022/12/15/APFS-FSTrees).  This hashing necessitates some slight differences to the B-Tree. These modified B-Trees can be identified by the `BTREE_HASHED` and `BTREE_NOHEADER` flags being set in their [_B-Tree Info_](/post/2022/12/08/APFS-BTrees).
 
 In standard B-Trees, _non-leaf nodes_ store the object identifier of their children in the value-half of their entries.  "Hashed" B-Trees instead use `btn_index_node_val_t` structures for this purpose, which store the cryptographic hash of the child node's contents along with its identifier.  Hashed nodes are also stored as _headerless_ objects, with their 32-byte header being zeroed out.
 

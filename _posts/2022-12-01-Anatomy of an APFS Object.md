@@ -45,7 +45,7 @@ uint64_t fletcher64(const void* data, size_t size) {
 
     while (words_left > 0) {
         // Truncate sums after a maximum of 1024 words
-        const n = std::min(words_left, 1024);
+        const size_t n = std::min(words_left, size_t{1024});
 
         // Compute the checksums
         for (size_t i = 0; i < n; i++) {
@@ -151,7 +151,7 @@ As previously mentioned, when object types are indicated in object headers and o
 
 The two _most-significant_ bits are used to denote the _kind_ of APFS object: virtual, ephemeral, or physical.  All APFS objects fit into one of these three categories.  The difference between these will be the subject of tomorrow's post.
 
-If the `OBJ_NOHEADER` flag is set, then the object type in question does not start with an `obj_phys_t` header.  These types of objects are rare, and so far I've only seen it used for _space manager bitmap_ objects.  Note that these objects are different than the _headerless_ objects that are used in sealed volumes, which we will discuss in a future posts.
+If the `OBJ_NOHEADER` flag is set, then the object type in question does not start with an `obj_phys_t` header.  These types of objects are rare, and so far I've only seen it used for _space manager bitmap_ objects.  Note that these objects are different than the _headerless_ objects that are used in sealed volumes, which we will discuss in a future post.
 
 The `OBJ_ENCRYPTED` flag denotes an object that is always encrypted on disk, and the `OBJ_NONPERSISTENT` flag denotes an object that is never written to disk at all (this flag will only be set for ephemeral objects in memory that do not require persistence).
 

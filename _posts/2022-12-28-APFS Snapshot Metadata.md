@@ -3,7 +3,7 @@ layout: post
 title: 2022 APFS Advent Challenge Day 20 - Snapshot Metadata
 ---
 
-Our previous discussion discussed how [_Object Maps_](/post/2022/12/12/APFS-OMAP) facilitate the implementation of point-in-time _Snapshots_ of APFS file systems by preserving [_File System Tree Nodes_](/post/2022/12/15/APFS-FSTrees) from earlier transactions. In that discussion, I outlined the on-disk structure of the _Object Map Snapshot Tree_ and how it can be used to enumerate the transaction identifiers of each Volume Snapshot. Today, we will briefly discuss two other sources of information that store additional metadata about each Snapshot.
+Our previous post covered how [_Object Maps_](/post/2022/12/12/APFS-OMAP) facilitate the implementation of point-in-time _Snapshots_ of APFS file systems by preserving [_File System Tree Nodes_](/post/2022/12/15/APFS-FSTrees) from earlier transactions. In that discussion, I outlined the on-disk structure of the _Object Map Snapshot Tree_ and how it can be used to enumerate the transaction identifiers of each Volume Snapshot. Today, we will briefly discuss two other sources of information that store additional metadata about each Snapshot.
 
 ## Snapshot Metadata Tree
 

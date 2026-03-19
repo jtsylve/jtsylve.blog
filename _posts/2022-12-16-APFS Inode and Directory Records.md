@@ -7,7 +7,7 @@ Each APFS [_file system entry_](/post/2022/12/15/APFS-FSTrees) has both an _inod
 
 ## Inode Records
 
-The first record stored for each _file system entry_ in a _File System Tree_ should be an _inode record_.The key for an inode record only consists of the standard `j_key_t` structure with the "type" identified as `APFS_TYPE_INODE`.
+The first record stored for each _file system entry_ in a _File System Tree_ should be an _inode record_. The key for an inode record only consists of the standard `j_key_t` structure with the "type" identified as `APFS_TYPE_INODE`.
 
 ```cpp
 // FS-Tree key for inode records
@@ -100,7 +100,7 @@ INODE_SNAPSHOT_COW_EXEMPTION | 0x00400000 | This inode is exempt from copy-on-wr
 
 ## Directory Records
 
-Every folder in the file system will store a _directory record_ for each of its children.  A directory record's key begins with the standard key header with the "type" encoded as `APFS_TYPE_DIR_REC` followed by and encoded hash and name of the directory entry.
+Every folder in the file system will store a _directory record_ for each of its children.  A directory record's key begins with the standard key header with the "type" encoded as `APFS_TYPE_DIR_REC` followed by an encoded hash and name of the directory entry.
 
 ```cpp
 #define J_DREC_LEN_MASK 0x000003ff
@@ -119,7 +119,7 @@ typedef struct j_drec_hashed_key {
 - `name`: A null-terminated UTF-8 encoded name of the entry
 
 
-The value for an directory record is variable sized to account for any _extended fields_ that may be stored after the record.
+The value for a directory record is variable sized to account for any _extended fields_ that may be stored after the record.
 
 ```cpp
 typedef struct j_drec_val {
@@ -144,7 +144,7 @@ RESERVED_10 | 0x0010 | _reserved_
 
 #### Directory Entry File Types
 
-The eight _least significant bits_ of the directory record flags encode the type of the directory entry as defined below.
+The four _least significant bits_ of the directory record flags encode the type of the directory entry as defined below.
 
 {: style="margin-left: 0"}
 Name | Value | Description

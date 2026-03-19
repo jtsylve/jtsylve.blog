@@ -9,7 +9,7 @@ As we discussed in [an earlier post](/post/2022/12/05/APFS-Containers), Apple’
 
 Both the SSD and HDD of a Fusion Drive appear to macOS as separate physical disk devices.  Both disks are [GPT](https://en.wikipedia.org/wiki/GUID_Partition_Table) partitioned with a standard EFI partition and a second, larger partition, which takes up the bulk of the space on disk.  For example, running the command `diskutil list` may show the HDD as `/dev/disk0` with its primary partition as `/dev/disk0s2` and the SSD as `/dev/disk1` and `/dev/disk1s2`.  These two partitions make up the _physical stores_ of the Fusion Container.
 
-Each physical store is formatted separately in much the same way as any other APFS container.  Both will share the same `nx_uuid` in their [_NX _Superblocks_ and have a separate, nearly-identical UUID in the `nx_fusion_uuid` field, with the _most significant bit_ being cleared on the `tier1` SSD partition and set on the `tier2` HDD partition.  The combination of these UUIDs can be used to identify the physical storage tiers of the container.
+Each physical store is formatted separately in much the same way as any other APFS container.  Both will share the same `nx_uuid` in their _NX Superblocks_ and have a separate, nearly-identical UUID in the `nx_fusion_uuid` field, with the _most significant bit_ being cleared on the `tier1` SSD partition and set on the `tier2` HDD partition.  The combination of these UUIDs can be used to identify the physical storage tiers of the container.
 
 ## Synthesized Container
 
@@ -28,7 +28,7 @@ if (paddr < first_tier2_block) {
 }
 ```
 
-The logically exabyte-scale gap separating the two tiers presents a unique problem during digital forensic imaging Fusion Containers.  To preserve the logical offsets of the evidence without having to use a data center worth of storage, you must use an evidence storage format that supports _sparse_ imaging.  As long as this is considered along with the additional physical address translation described above, analyzing fusion containers does not generally differ from other APFS containers.
+The logically exabyte-scale gap separating the two tiers presents a unique problem during digital forensic imaging of Fusion Containers.  To preserve the logical offsets of the evidence without having to use a data center worth of storage, you must use an evidence storage format that supports _sparse_ imaging.  As long as this is considered along with the additional physical address translation described above, analyzing Fusion Containers does not generally differ from analyzing other APFS containers.
 
 
 

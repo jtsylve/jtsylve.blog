@@ -17,7 +17,7 @@ I've chosen the topic of APFS for three main reasons:
 
 ## The Rules
 
-All good challenges needs rules in order to keep us honest.  Luckily for me, I'm challenging myself to this task, so I get to set the requirements.
+All good challenges need rules in order to keep us honest.  Luckily for me, I'm challenging myself to this task, so I get to set the requirements.
 
 1. **I will publish a short blog post ~~every day between December 1st and 24th~~ every weekday in December.**  While I am aware that the Christian season of Advent technically starts on November 27th and ends on Christmas, I am not doing this as a part of any religious observance and most modern Advent calendars start on December 1st anyway.  Besides, I only just had this idea and haven't had time to plan out my topics.
 

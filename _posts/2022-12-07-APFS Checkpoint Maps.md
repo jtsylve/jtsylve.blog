@@ -17,14 +17,14 @@ typedef struct checkpoint_mapping {
     uint32_t cpm_pad;      // 0x0C
     oid_t cpm_fs_oid;      // 0x10
     oid_t cpm_oid;         // 0x18
-    oid_t cpm_paddr;       // 0x30
-} checkpoint_mapping_t;    // 0x38
+    oid_t cpm_paddr;       // 0x20
+} checkpoint_mapping_t;    // 0x28
 ```
 
 - `cpm_type`: The type of the mapped object
 - `cpm_subtype`: The (optional) subtype of the mapped object
-- `cmp_size`: The size (in-bytes) of the mapped object
-- `cmp_pad`: _reserved padding_
+- `cpm_size`: The size (in-bytes) of the mapped object
+- `cpm_pad`: _reserved padding_
 - `cpm_fs_oid`: The _virtual_ object identifier of the file system that owns the ephemeral object
 - `cpm_oid`: The _object identifier_ of the mapped object
 - `cpm_paddr`: The physical address of the start of the object
@@ -44,40 +44,40 @@ typedef struct checkpoint_map_phys {
 
 - `cpm_o`: The [object header](/post/2022/12/01/Anatomy-of-an-APFS-Object)
 - `cpm_flags`: A set of bit-flags.  Currently, only `CHECKPOINT_MAP_LAST` is defined
-- `cmp_count`: The number of mappings stored in this Checkpoint Map
-- `cmp_map`: An array of `cmp_count` Checkpoint Mappings
+- `cpm_count`: The number of mappings stored in this Checkpoint Map
+- `cpm_map`: An array of `cpm_count` Checkpoint Mappings
 
 
 ## Locating Ephemeral Objects
 
-Once you've identified the location of the Checkpoint Data Area, enumeration of on-disk ephemeral objects is fairly straight forward.  _NOTE: You cannot rely on the zero-block NX Superblock copy.  You must locate the NX Superblock that belongs to the Checkpoint you're examining._
+Once you've identified the location of the Checkpoint Data Area, enumeration of on-disk ephemeral objects is simple.  _NOTE: You cannot rely on the block-zero NX Superblock copy.  You must locate the NX Superblock that belongs to the Checkpoint you're examining._
 
 Because there are relatively few persistent, ephemeral objects, [linear time](https://en.wikipedia.org/wiki/Time_complexity#Linear_time) enumeration of all of a checkpoint's mappings is practical.  This means that there aren't any complex data structures that get in between us and the objects that we're looking for.
 
 1. The `nx_xp_desc_index` member of the Checkpoint's `nx_superblock_t` stores a zero-based block index into the Checkpoint Descriptor Area.  This is the location of the first Checkpoint Map Object.  Locate this object and validate it using the checksum stored in its object header.
 
-2. Read the `cmp_count` member of the Checkpoint Map.  This contains the number of Checkpoint Mappings stored in the current map.
+2. Read the `cpm_count` member of the Checkpoint Map.  This contains the number of Checkpoint Mappings stored in the current map.
 
 3. Enumerate the mappings stored in the `cpm_map` array.  These mappings each contain information about an on-disk ephemeral object, including the physical block address in which it is stored.
 
-4. Once all mappings have been enumerated, read the `cmp_flags` member.  If the bit defined in `CHECKPOINT_MAP_LAST` is set, you've reached the end of your journey; otherwise, there are more ephemeral objects to enumerate.
+4. Once all mappings have been enumerated, read the `cpm_flags` member.  If the bit defined in `CHECKPOINT_MAP_LAST` is set, you've reached the end of your journey; otherwise, there are more ephemeral objects to enumerate.
 
 5. The next Checkpoint Map Object should follow the current map object, but it is important to remember that the Checkpoint Descriptor Area acts as a [circular buffer](https://en.wikipedia.org/wiki/Circular_buffer).  You can determine the number of blocks in the Checkpoint Descriptor Area, by reading the `nx_xp_desc_blocks` member of the NX Superblock and ignoring the _most-significant bit_.  If the current map is stored in the last block of the descriptor area, then the next map will be stored in the first.
 
 ```c++
 // calculating the next index in the circular buffer
 next_index = current_index + 1;
-if (next_index == (nx_cp_desc_blocks & 0x7FFFFFFF)) {
+if (next_index == (nx_xp_desc_blocks & 0x7FFFFFFF)) {
     next_index = 0;
 }
 
 // alternatively...
-next_index = (current_index + 1) % (nx_cp_desc_blocks & 0x7FFFFFFF);
+next_index = (current_index + 1) % (nx_xp_desc_blocks & 0x7FFFFFFF);
 ```
 
 ## Conclusion
 
-Compared to other kinds of objects in APFS, each checkpoint only maintains a relatively small amount of on-disk ephemeral objects.  Due to their nature, these objects are likely all read into memory at once when the Checkpoint is mounted.  Thanks to these facts, ephemeral objects are stored on disk in a way that is relatively simple for us to find and enumerate.
+Compared to other kinds of objects in APFS, each checkpoint only maintains a relatively small number of on-disk ephemeral objects.  Due to their nature, these objects are likely all read into memory at once when the Checkpoint is mounted.  Thanks to these facts, ephemeral objects are stored on disk in a way that is relatively simple for us to find and enumerate.
 
 If only it were always that simple...  Next up in this series we will discuss B-Trees -- APFS's method of choice for referencing potentially large sets of data on disk.
 
