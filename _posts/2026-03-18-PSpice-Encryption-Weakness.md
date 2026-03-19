@@ -107,5 +107,7 @@ plaintext, verification = decrypt_stream("encrypted.lib")
 
 Beyond PSpice, SpiceCrypt supports LTspice's text-based DES format and Binary File format.  Full details on all supported formats, the Python API, and the legal basis for this interoperability work are available in the [project README](https://github.com/jtsylve/spice-crypt/).
 
+**Disclaimer:** SpiceCrypt is intended solely for enabling simulator interoperability with lawfully obtained models.  Using it to violate intellectual property rights is immoral and is not an acceptable use of the tool.
+
 ---
 PSpice is a trademark of Cadence Design Systems, Inc.
