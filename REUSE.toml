@@ -1,0 +1,25 @@
+version = 1
+
+[[annotations]]
+path = ["_posts/**"]
+SPDX-FileCopyrightText = "2022-2026 Joe T. Sylve, Ph.D."
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ["images/**"]
+SPDX-FileCopyrightText = "2022-2026 Joe T. Sylve, Ph.D."
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = [
+    "**/*.html",
+    "**/*.scss",
+    "**/*.yml",
+    "**/*.md",
+    ".gitignore",
+    "CNAME",
+    "robots.txt",
+]
+precedence = "closest"
+SPDX-FileCopyrightText = ["2022-2026 Joe T. Sylve, Ph.D.", "2015 Barry Clark"]
+SPDX-License-Identifier = "MIT"
