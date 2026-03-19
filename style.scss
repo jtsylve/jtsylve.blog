@@ -7,19 +7,17 @@
 
 @import "reset";
 @import "variables";
-// Syntax highlighting @import is at the bottom of this file
 
 /**************/
 /* BASE RULES */
 /**************/
 
 html {
-  font-size: 100%;
   height: 100%;
 }
 
 body {
-	background: $white;
+  background: $white;
   font: 1.1em/1.4 $helvetica;
   color: $darkGray;
   height: 100%;
@@ -31,8 +29,10 @@ body {
   margin: 0 auto;
   padding: 0 10px;
   width: 95%;
-  flex: 1 0 auto;
+}
 
+main {
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
 }
@@ -61,12 +61,11 @@ h2 {
   font-size: x-large;
 }
 
-h3 {
+h3, h4 {
   font-size: large;
 }
 
 h4 {
-  font-size: large;
   color: $gray;
 }
 
@@ -77,10 +76,6 @@ p {
 a {
   color: $blue;
   text-decoration: none;
-	cursor: pointer;
-  &:hover, &:active {
-    color: $blue;
-  }
 }
 
 ul, ol {
@@ -116,36 +111,14 @@ img {
   max-width: 100%;
 }
 
-// Fixes images in popup boxes from Google Translate
-.gmnoprint img {
-  max-width: none;
-}
-
 .date {
   font-style: italic;
   color: $gray;
 }
 
-// Specify the color of the selection
-::-moz-selection {
-  color: $black;
-  background: $lightGray;
-}
 ::selection {
   color: $black;
   background: $lightGray;
-}
-
-// Nicolas Gallagher's micro clearfix hack
-// http://nicolasgallagher.com/micro-clearfix-hack/
-.clearfix:before,
-.clearfix:after {
-    content: " ";
-    display: table;
-}
-
-.clearfix:after {
-    clear: both;
 }
 
 /*********************/
@@ -157,24 +130,24 @@ img {
 //
 
 .masthead {
-  padding: 20px 0;
+  display: flex;
+  align-items: center;
+  padding: 20px 10px;
   border-bottom: 1px solid $lightGray;
 
   @include mobile {
+    flex-direction: column;
     text-align: center;
   }
 }
 
 .site-avatar {
-  float: left;
   width: 70px;
   height: 70px;
   margin-right: 15px;
 
   @include mobile {
-    float: none;
-    display: block;
-    margin: 0 auto;
+    margin-right: 0;
   }
 
   img {
@@ -182,20 +155,9 @@ img {
   }
 }
 
-.site-info {
-  float: left;
-
-  @include mobile {
-    float: none;
-    display: block;
-    margin: 0 auto;
-  }
-}
-
 .site-name {
   margin: 0;
   color: $darkGray;
-  cursor: pointer;
   font-family: $helveticaNeue;
   font-weight: 300;
   font-size: 1.5rem;
@@ -213,21 +175,17 @@ img {
 }
 
 nav {
-  float: right;
-  margin-top: 23px; // @TODO: Vertically middle align
+  margin-left: auto;
   font-family: $helveticaNeue;
   font-size: large;
 
   @include mobile {
-    float: none;
-    margin-top: 9px;
-    display: block;
+    margin: 9px auto 0;
   }
 
   a {
     margin-left: 20px;
     color: $darkGray;
-    text-align: right;
     font-weight: 300;
     letter-spacing: 1px;
 
@@ -245,11 +203,11 @@ nav {
 .posts > .post {
   padding-bottom: 2em;
   border-bottom: 1px solid $lightGray;
-}
 
-.posts > .post:last-child {
-  padding-bottom: 1em;
-  border-bottom: none;
+  &:last-child {
+    padding-bottom: 1em;
+    border-bottom: none;
+  }
 }
 
 .post {
@@ -265,11 +223,7 @@ nav {
   }
 
   hr {
-    border: thin dashed gray;
-  }
-
-  .comments {
-    margin-top: 10px;
+    border: thin dashed $gray;
   }
 
   .read-more {
@@ -279,7 +233,6 @@ nav {
 
   .issues {
     margin: 35px 0 0 0;
-    padding: 0;
     font-size: smaller;
     color: $gray;
     text-align: center;
@@ -287,32 +240,31 @@ nav {
 
   pre, table, img {
     padding: 7px 7px 7px 10px;
-    border: 1px solid #ddd;
-    -moz-box-shadow: 3px 3px rgba(0,0,0,0.1);
-    -webkit-box-shadow: 3px 3px rgba(0,0,0,0.1);
+    border: 1px solid $borderGray;
     box-shadow: 3px 3px rgba(0,0,0,0.1);
-    margin: 15px auto 15px auto;
-    overflow: scroll;
-    border-collapse:collapse;
-    font-size:smaller;
+    margin: 15px auto;
   }
-  
+
+  pre, table {
+    overflow: auto;
+    font-size: smaller;
+  }
+
   th, td, dt {
     padding: 5px;
-    border: 1px solid #ddd;
+    border: 1px solid $borderGray;
   }
-  
+
   td {
     text-align: justify;
   }
-  
-  dt {
-    font-weight:700;
+
+  dt, th {
+    font-weight: bold;
   }
-  
+
   th {
     background-color: $lightGray;
-    font-weight: bold;
     text-align: center;
   }
 
@@ -329,48 +281,40 @@ nav {
       text-align: justify;
     }
 
-    h3 {
+    h2 {
       font-size: medium;
     }
   }
 }
 
 .navigation {
-  display: flex;                  
-  justify-content: space-between; 
-  width: 100%;
+  display: flex;
+  justify-content: space-between;
   font-size: medium;
   font-weight: bold;
   margin-top: auto;
 
-  .prev {
+  > * { flex: 1; }
+
+  .prev, .next {
     max-width: 48%;
-    text-align: left;
     overflow: hidden;
   }
 
-  .current {
-    text-align: center;
-  }
+  .current { text-align: center; }
 
-  .next {
-    max-width: 48%;
-    text-align: right;
-    overflow: hidden;
-  }
-}
-
-.navigation > * { flex: 1; }
-
-.wrapper-footer {
-  border-top: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
-  background-color: $lightGray;
+  .next { text-align: right; }
 }
 
 footer {
-  padding: 20px 0;
+  margin: 0 auto;
+  padding: 20px 10px;
+  width: 95%;
+  border-top: 1px solid $borderGray;
+  border-bottom: 1px solid $borderGray;
+  background-color: $lightGray;
   text-align: center;
+
   p {
     font-size: x-small;
     color: $darkGray;
@@ -378,9 +322,5 @@ footer {
   }
 }
 
-
-
-// Settled on moving the import of syntax highlighting to the bottom of the CSS
-// ... Otherwise it really bloats up the top of the CSS file and makes it difficult to find the start
 @import "highlights";
 @import "svg-icons";
