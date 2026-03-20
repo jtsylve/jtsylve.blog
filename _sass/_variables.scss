@@ -1,24 +1,4 @@
-//
-// VARIABLES
-//
-
-// Colors
-$blue: #4183c4;
-
-// Grays
-$black: #000;
-$darkerGray: #222;
-$darkGray: #333;
-$gray: #666;
-$lightGray: #eee;
-$borderGray: #ddd;
-$white: #fff;
-
-// Font stacks
-$helvetica: Helvetica, Arial, sans-serif;
-$helveticaNeue: "Helvetica Neue", Helvetica, Arial, sans-serif;
-
-// Breakpoints
+// Breakpoints (SCSS variables required for @media queries)
 @mixin mobile {
   @media screen and (max-width: 640px) {
     @content;
@@ -37,4 +17,102 @@ $helveticaNeue: "Helvetica Neue", Helvetica, Arial, sans-serif;
   align-items: center;
   min-height: 44px;
   min-width: 44px;
+}
+
+// Color palette mixin to avoid triplication
+@mixin light-colors {
+  --color-bg: #fafafa;
+  --color-bg-elevated: #ffffff;
+  --color-bg-code: #f4f4f8;
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: #52525b;
+  --color-text-tertiary: #706f78;
+  --color-border: #e4e4e7;
+  --color-border-functional: #c4c4cc;
+  --color-accent: #4272b8;
+  --color-accent-hover: #345d96;
+  --color-selection-bg: #c7d6fd;
+}
+
+@mixin dark-colors {
+  --color-bg: #0f0f14;
+  --color-bg-elevated: #1a1a24;
+  --color-bg-code: #16161e;
+  --color-text-primary: #e4e4ef;
+  --color-text-secondary: #a1a1b5;
+  --color-text-tertiary: #9e9eb0;
+  --color-border: #2a2a3a;
+  --color-border-functional: #4a4a5e;
+  --color-accent: #7e9abf;
+  --color-accent-hover: #a0b5d2;
+  --color-selection-bg: #2e3f7a;
+}
+
+// Design tokens
+:root {
+  // Spacing scale (4px base) -- only tokens actually used in the codebase
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  // Typography
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+  // Fluid type scale
+  --text-sm: clamp(0.8125rem, 0.7825rem + 0.15vw, 0.875rem);
+  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --text-lg: clamp(1.0625rem, 0.9875rem + 0.375vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.35rem + 0.75vw, 1.875rem);
+  --text-3xl: clamp(1.875rem, 1.625rem + 1.25vw, 2.5rem);
+
+  // Transitions
+  --duration-fast: 120ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  // Radius
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  // Container padding (responsive)
+  --container-padding: 40px;
+
+  // Light mode colors (default)
+  @include light-colors;
+}
+
+@media screen and (max-width: 900px) {
+  :root {
+    --container-padding: 24px;
+  }
+}
+
+@media screen and (max-width: 640px) {
+  :root {
+    --container-padding: 16px;
+  }
+}
+
+// Dark mode (system preference)
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include dark-colors;
+  }
+}
+
+// Manual toggle overrides (must appear AFTER @media block)
+[data-theme="dark"] {
+  @include dark-colors;
+}
+
+[data-theme="light"] {
+  @include light-colors;
 }

@@ -5,8 +5,10 @@
 // IMPORTS
 //
 
-@import "reset";
-@import "variables";
+@use "reset";
+@use "variables" as *;
+@use "fonts";
+@use "highlights";
 
 /**************/
 /* BASE RULES */
@@ -17,56 +19,46 @@ html {
 }
 
 body {
-  background: $white;
-  font: 1.1em/1.4 $helvetica;
-  color: $darkGray;
+  background: var(--color-bg);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+::selection {
+  color: var(--color-text-primary);
+  background: var(--color-selection-bg);
 }
 
 .container {
   margin: 0 auto;
   max-width: 1100px;
   width: 100%;
-  --container-padding: 40px;
   padding: 0 var(--container-padding);
-
-  @include tablet {
-    --container-padding: 24px;
-  }
-
-  @include mobile {
-    --container-padding: 16px;
-  }
 }
 
-main {
+main.container {
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
-  padding-top: 8px;
+  padding-top: var(--space-4);
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: $helveticaNeue;
-  color: $darkerGray;
-  font-weight: bold;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  line-height: 1.3;
+}
 
-  line-height: 1.7;
-  padding: 0;
-
-  @include mobile {
-    line-height: 1.4;
-  }
+h1, h2 {
+  letter-spacing: -0.015em;
 }
 
 h1 {
-  font-size: xx-large;
-
-  @include mobile {
-    font-size: x-large;
-  }
+  font-size: var(--text-3xl);
 
   a {
     color: inherit;
@@ -74,32 +66,36 @@ h1 {
 }
 
 h2 {
-  font-size: x-large;
+  font-size: var(--text-2xl);
 }
 
-h3, h4 {
-  font-size: large;
+h3 {
+  font-size: var(--text-xl);
 }
 
 h4 {
-  color: $gray;
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
 }
 
 p {
-  margin: 15px 0;
+  margin: var(--space-4) 0;
 }
 
 a {
-  color: $blue;
-  text-decoration: none;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  transition: color var(--duration-fast) var(--ease-out);
 
   &:hover {
-    text-decoration: underline;
+    color: var(--color-accent-hover);
   }
 }
 
 ul, ol {
-  margin: 15px 0;
+  margin: var(--space-4) 0;
   padding-left: 30px;
 }
 
@@ -119,26 +115,9 @@ ul ul, ol ul {
   list-style-type: circle;
 }
 
-em, i {
-  font-style: italic;
-}
-
-strong, b {
-  font-weight: bold;
-}
-
-img {
-  max-width: 100%;
-}
-
 .date {
-  font-style: italic;
-  color: $gray;
-}
-
-::selection {
-  color: $black;
-  background: $lightGray;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
 }
 
 /*********************/
@@ -153,7 +132,7 @@ img {
   display: flex;
   align-items: center;
   padding: 20px var(--container-padding);
-  border-bottom: 1px solid $lightGray;
+  border-bottom: 1px solid var(--color-border);
 
   @include tablet {
     flex-wrap: wrap;
@@ -163,39 +142,42 @@ img {
     flex-direction: column;
     text-align: center;
   }
+
+  a {
+    text-decoration: none;
+  }
 }
 
 .site-avatar {
-  width: 70px;
-  height: 70px;
-  margin-right: 15px;
+  width: 40px;
+  height: 40px;
+  margin-right: var(--space-3);
 
   @include mobile {
     margin-right: 0;
   }
 
   img {
-    border-radius: 5px;
+    border-radius: 50%;
   }
 }
 
 .site-name {
   margin: 0;
-  color: $darkGray;
-  font-family: $helveticaNeue;
-  font-weight: 300;
-  font-size: 1.5rem;
-  letter-spacing: 1px;
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-size: var(--text-base);
+  letter-spacing: -0.015em;
 
-  a:hover {
-    text-decoration: none;
+  a {
+    color: inherit;
   }
 }
 
 .site-description {
-  margin: -5px 0 0 0;
-  color: $gray;
-  font-size: smaller;
+  margin: -2px 0 0 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
 
   @include mobile {
     margin: 3px 0;
@@ -204,28 +186,27 @@ img {
 
 nav {
   margin-left: auto;
-  font-family: $helveticaNeue;
-  font-size: large;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
 
   @include mobile {
     margin: 9px auto 0;
   }
 
   a {
-    margin-left: 20px;
-    color: $darkGray;
-    font-weight: 300;
-    letter-spacing: 1px;
-    transition: color 0.2s ease;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-out);
 
     &:hover {
-      color: $blue;
-      text-decoration: none;
+      color: var(--color-accent);
     }
 
     @include mobile {
-      margin: 0 10px;
-      color: $blue;
+      color: var(--color-accent);
       @include touch-target;
       justify-content: center;
     }
@@ -237,111 +218,195 @@ nav {
 //
 
 .posts > .post {
-  padding: 2em 0;
-  border-bottom: 1px solid $lightGray;
+  padding: var(--space-8) 0;
+  border-bottom: 1px solid var(--color-border);
 
   &:first-child {
     padding-top: 0;
   }
 
   &:last-child {
-    padding-bottom: 1em;
+    padding-bottom: var(--space-4);
     border-bottom: none;
   }
 }
 
-.post {
-  margin: 0 auto;
-  max-width: 100%;
-  overflow-x: auto;
+.posts > .post .excerpt {
+  color: var(--color-text-secondary);
+}
 
-  blockquote {
-    margin: 1.8em .8em;
-    border-left: 2px solid $gray;
-    padding: 0.1em 1em;
-    color: $gray;
-    font-style: italic;
+.posts > .post h2 {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+article.post {
+  display: grid;
+  grid-template-columns: 1fr min(72ch, 100%) 1fr;
+
+  > * {
+    grid-column: 2;
   }
 
-  hr {
-    border: thin dashed $gray;
-  }
-
-  .read-more {
-    text-transform: uppercase;
-    font-weight: bold;
-    font-size: smaller;
-    letter-spacing: 0.5px;
-    transition: color 0.2s ease;
-    display: inline-block;
-    padding: 12px 0;
-  }
-
-  .issues {
-    margin: 35px 0 0 0;
-    font-size: smaller;
-    color: $gray;
-    text-align: center;
-  }
-
-  pre, table, img {
-    padding: 7px 7px 7px 10px;
-    border: 1px solid $borderGray;
-    box-shadow: 3px 3px rgba(0,0,0,0.1);
-    margin: 15px auto;
-  }
-
-  pre, table {
-    overflow: auto;
-    font-size: smaller;
+  > pre, > .highlight, > img, > figure {
+    grid-column: 1 / -1;
     max-width: 100%;
   }
 
-  th, td, dt {
-    padding: 5px;
-    border: 1px solid $borderGray;
+  h2 {
+    margin-top: var(--space-8);
   }
 
-  td {
-    text-align: justify;
+  h3 {
+    margin-top: var(--space-6);
+  }
+
+  h4 {
+    margin-top: var(--space-4);
+  }
+
+  blockquote {
+    margin: var(--space-6) 0;
+    border-left: 3px solid var(--color-accent);
+    padding: 0 0 0 var(--space-6);
+    color: var(--color-text-secondary);
+  }
+
+  hr {
+    border: none;
+    height: 1px;
+    background: var(--color-border);
+    margin: var(--space-12) 0;
+  }
+
+  .read-more {
+    font-weight: 500;
+    font-size: var(--text-sm);
+    transition: color var(--duration-fast) var(--ease-out);
+    display: inline-block;
+    padding: var(--space-3) 0;
+
+    &::after {
+      content: " \2192";
+    }
+  }
+
+  .issues {
+    margin: var(--space-10) 0 0 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
+    text-align: center;
+    background: var(--color-bg-code);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-6);
+  }
+
+  pre, img {
+    margin: var(--space-4) auto;
+  }
+
+
+  pre, .highlight {
+    background: var(--color-bg-code);
+    border: 1px solid var(--color-border-functional);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-6);
+    overflow-x: auto;
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    scrollbar-width: thin;
+  }
+
+  // Prevent double border/padding when highlight wraps pre
+  .highlight pre {
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    scrollbar-width: thin;
+    margin: var(--space-4) 0;
+  }
+
+  table {
+    border-collapse: separate;
+    border: 1px solid var(--color-border-functional);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    width: 100%;
+  }
+
+  th, td, dt {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-border-functional);
   }
 
   dt, th {
-    font-weight: bold;
+    font-weight: 600;
+  }
+
+  th, td {
+    text-align: left;
   }
 
   th {
-    background-color: $lightGray;
-    text-align: center;
+    background: var(--color-bg-code);
+  }
+
+  img {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
   }
 
   .message {
-    border: medium darkred solid;
-    padding: 0 15px;
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--hl-error-fg);
+    padding: 0 var(--space-4);
     max-width: 80ch;
-    margin: 35px auto;
-    font-size: smaller;
-    background-color: $lightGray;
-    text-align: center;
-
-    p {
-      text-align: justify;
-    }
+    margin: var(--space-10) auto;
+    font-size: var(--text-sm);
+    background: var(--color-bg-elevated);
+    text-align: left;
 
     h2 {
-      font-size: medium;
+      font-size: var(--text-base);
+      margin-top: var(--space-4);
+      padding-top: 0;
+      border-top: none;
     }
   }
+}
+
+// Inline code
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-bg-code);
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+// Reset code styling inside pre blocks
+pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  font-size: inherit;
 }
 
 .navigation {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-size: medium;
-  font-weight: bold;
-  margin-top: auto;
-  padding: 24px 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-top: var(--space-12);
   width: 100%;
 
   > * { flex: 1; }
@@ -357,47 +422,233 @@ nav {
 
   .current {
     text-align: center;
-    color: $gray;
-    font-weight: normal;
+    color: var(--color-text-tertiary);
+    font-weight: 400;
   }
 
   .next { text-align: right; }
 
   @include mobile {
-    font-size: small;
-    padding: 16px 0;
+    padding-top: var(--space-4);
   }
 }
 
 footer {
-  padding: 24px 40px;
-  border-top: 1px solid $borderGray;
-  background-color: $lightGray;
+  padding: var(--space-6) var(--container-padding);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
   text-align: center;
 
   @include tablet {
-    padding: 20px 24px;
+    padding: var(--space-5) var(--container-padding);
   }
 
   @include mobile {
-    padding: 16px;
+    padding: var(--space-4) var(--container-padding);
   }
 
   a {
     @include touch-target;
     justify-content: center;
-
-    &:hover {
-      text-decoration: none;
-    }
+    text-decoration: none;
   }
 
   p {
-    font-size: x-small;
-    color: $darkGray;
+    font-size: var(--text-sm);
+    color: var(--color-text-tertiary);
     margin: 0;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+    color: var(--color-text-tertiary);
+    transition: color var(--duration-fast) var(--ease-out);
+  }
+
+  a:hover svg {
+    color: var(--color-text-primary);
+  }
+
+  .footer-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
   }
 }
 
-@import "highlights";
-@import "svg-icons";
+// Skip link
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-4);
+  background: var(--color-bg);
+  color: var(--color-accent);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  z-index: 100;
+  text-decoration: none;
+
+  &:focus {
+    top: var(--space-2);
+  }
+}
+
+// Screen reader only
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Focus visible
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+// Reduced motion
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+// Theme toggle button
+.theme-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: color var(--duration-fast) var(--ease-out);
+  @include touch-target;
+  justify-content: center;
+
+  &:hover {
+    color: var(--color-text-primary);
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  // Default: show moon (offer dark mode)
+  .icon-sun { display: none; }
+  .icon-moon { display: block; }
+}
+
+// When dark mode is active, show sun (offer light mode)
+[data-theme="dark"] .theme-toggle {
+  .icon-sun { display: block; }
+  .icon-moon { display: none; }
+}
+
+// System dark preference without manual override
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .theme-toggle {
+    .icon-sun { display: block; }
+    .icon-moon { display: none; }
+  }
+}
+
+// Reading time
+.reading-time {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  margin-left: var(--space-3);
+}
+
+.post-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-6);
+}
+
+// Print stylesheet
+@media print {
+  .masthead, footer, .navigation, .skip-link, .theme-toggle, .issues {
+    display: none !important;
+  }
+
+  body {
+    font: 11pt/1.5 Georgia, serif;
+    color: #000;
+    background: #fff;
+  }
+
+  .container, .post {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  article.post {
+    display: block;
+  }
+
+  a[href] {
+    color: #000;
+    text-decoration: underline;
+  }
+
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #555;
+  }
+
+  a[href^="/"]::after {
+    content: " (https://jtsylve.blog" attr(href) ")";
+  }
+
+  a[href^="#"]::after,
+  a[href^="mailto:"]::after {
+    content: "";
+  }
+
+  pre {
+    white-space: pre-wrap;
+    font-size: 9pt;
+    page-break-inside: avoid;
+    border: 1px solid #ccc;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    color: #000;
+  }
+
+  img {
+    page-break-inside: avoid;
+  }
+
+  // Force syntax highlighting to grayscale
+  .highlight {
+    background: #f5f5f5 !important;
+    border-color: #ccc !important;
+
+    [class^="c"], [class^="k"], [class^="s"],
+    [class^="m"], [class^="n"], [class^="g"],
+    [class^="o"], .err, .w {
+      color: #333 !important;
+      background: transparent !important;
+    }
+  }
+}

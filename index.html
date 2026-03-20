@@ -6,19 +6,19 @@ layout: default
   {% for post in paginator.posts %}
     <article class="post">
 
-      <h1><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h1>
+      <h2><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h2>
       <div class="date">
-        {{ post.date | date: "%A, %B %e, %Y" }}
+        {{ post.date | date: "%B %e, %Y" }}
       </div>
 
-      {{ post.excerpt }}
+      <div class="excerpt">{{ post.excerpt }}</div>
 
-      <a href="{{ site.baseurl }}{{ post.url }}" class="read-more">Read More</a>
+      <a href="{{ site.baseurl }}{{ post.url }}" class="read-more">Read more<span class="sr-only">: {{ post.title }}</span></a>
     </article>
   {% endfor %}
 </div>
 
-<div class="navigation">
+<nav class="navigation" aria-label="Pagination">
   <p class="prev">
     {% if paginator.previous_page %}
     <a href="{{ paginator.previous_page_path }}">&laquo; Newer</a>
@@ -32,4 +32,4 @@ layout: default
     <a href="{{ paginator.next_page_path }}">Older &raquo;</a>
     {% endif %}
   </p>
-</div>
+</nav>

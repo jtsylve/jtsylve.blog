@@ -3,7 +3,26 @@
     document.querySelectorAll("a[href]").forEach(function(link) {
         if (link.hostname !== location.hostname) {
             link.target = "_blank";
-            link.rel = "noopener";
+            link.rel = "noopener noreferrer";
+            var span = document.createElement("span");
+            span.className = "sr-only";
+            span.textContent = " (opens in new tab)";
+            link.appendChild(span);
+        }
+    });
+
+    // Wrap tables in scrollable container for mobile overflow
+    document.querySelectorAll("article.post table").forEach(function(table) {
+        var wrapper = document.createElement("div");
+        wrapper.className = "table-wrapper";
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+    });
+
+    // Make scrollable code blocks and table wrappers keyboard-accessible (WCAG SC 2.1.1)
+    document.querySelectorAll("pre, .table-wrapper").forEach(function(el) {
+        if (el.scrollWidth > el.clientWidth) {
+            el.setAttribute("tabindex", "0");
         }
     });
 </script>

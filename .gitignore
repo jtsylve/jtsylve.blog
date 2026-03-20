@@ -5,7 +5,10 @@ _site
 .bundle
 .vscode
 .sass-cache
-Gemfile
-Gemfile.lock
+vendor
 node_modules
 package.json
+.jekyll-cache
+.playwright-mcp
+.claude
+CLAUDE.md
