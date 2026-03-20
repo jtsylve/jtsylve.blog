@@ -5,6 +5,9 @@ on:
     branches: ["master", "redesign"]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: read
   pages: write
@@ -17,15 +20,13 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: '3.4'
           bundler-cache: true
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -38,8 +39,6 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/master'
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
