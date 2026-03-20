@@ -1,119 +1,184 @@
-code {
-  font-family:'Bitstream Vera Sans Mono','Courier', monospace;
+// Syntax highlighting token colors as CSS custom properties
+
+// GitHub Light
+@mixin hl-light {
+  --hl-comment: #6a737d;
+  --hl-keyword: #d73a49;
+  --hl-string: #032f62;
+  --hl-number: #005cc5;
+  --hl-type: #6f42c1;
+  --hl-function: #6f42c1;
+  --hl-variable: #e36209;
+  --hl-builtin: #005cc5;
+  --hl-regex: #032f62;
+  --hl-symbol: #e36209;
+  --hl-error-fg: #cb2431;
+  --hl-error-bg: #ffeef0;
+  --hl-diff-add-bg: #e6ffed;
+  --hl-diff-del-bg: #ffeef0;
+  --hl-output: #586069;
+  --hl-prompt: #586069;
+  --hl-namespace: #586069;
+  --hl-tag: #22863a;
+  --hl-attr: #6f42c1;
+  --hl-decorator: #6f42c1;
+  --hl-entity: #6f42c1;
+}
+
+// One Dark
+@mixin hl-dark {
+  --hl-comment: #5c6370;
+  --hl-keyword: #c678dd;
+  --hl-string: #98c379;
+  --hl-number: #d19a66;
+  --hl-type: #e5c07b;
+  --hl-function: #61afef;
+  --hl-variable: #e06c75;
+  --hl-builtin: #61afef;
+  --hl-regex: #98c379;
+  --hl-symbol: #d19a66;
+  --hl-error-fg: #f44747;
+  --hl-error-bg: rgba(244, 71, 71, 0.1);
+  --hl-diff-add-bg: rgba(152, 195, 121, 0.15);
+  --hl-diff-del-bg: rgba(224, 108, 117, 0.15);
+  --hl-output: #abb2bf;
+  --hl-prompt: #abb2bf;
+  --hl-namespace: #abb2bf;
+  --hl-tag: #e06c75;
+  --hl-attr: #d19a66;
+  --hl-decorator: #61afef;
+  --hl-entity: #56b6c2;
+}
+
+:root {
+  @include hl-light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    @include hl-dark;
+  }
+}
+
+[data-theme="dark"] {
+  @include hl-dark;
+}
+
+[data-theme="light"] {
+  @include hl-light;
 }
 
 .highlight {
-  background-color: #f8f8f8;
+  background-color: var(--color-bg-code);
 
   table td { padding: 5px; }
   table pre { margin: 0; }
 
   // Comments
   .c, .ch, .cd, .cm, .cpf, .c1 {
-    color: #999988;
+    color: var(--hl-comment);
     font-style: italic;
   }
   .cp {
-    color: #999;
-    font-weight: bold;
+    color: var(--hl-comment);
+    font-weight: 500;
   }
   .cs {
-    color: #999;
-    font-weight: bold;
+    color: var(--hl-comment);
+    font-weight: 500;
     font-style: italic;
   }
 
   // Errors
   .err {
-    color: #a61717;
-    background-color: #e3d2d2;
+    color: var(--hl-error-fg);
+    background-color: var(--hl-error-bg);
   }
 
   // Diffs and generic
   .gd {
-    color: #000;
-    background-color: #ffdddd;
+    color: var(--hl-error-fg);
+    background-color: var(--hl-diff-del-bg);
   }
   .ge {
-    color: #000;
     font-style: italic;
   }
   .gr, .gt {
-    color: #aa0000;
+    color: var(--hl-error-fg);
   }
   .gh, .bp {
-    color: #999;
+    color: var(--hl-comment);
   }
   .gi {
-    color: #000;
-    background-color: #ddffdd;
+    color: var(--hl-regex);
+    background-color: var(--hl-diff-add-bg);
   }
   .go {
-    color: #888;
+    color: var(--hl-output);
   }
   .gp {
-    color: #555;
+    color: var(--hl-prompt);
   }
   .gs {
-    font-weight: bold;
+    font-weight: 500;
   }
   .gu {
-    color: #aaa;
+    color: var(--hl-comment);
   }
 
   // Keywords
   .k, .kv, .kc, .kd, .kn, .kp, .kr, .sa, .ow, .o {
-    color: #000;
-    font-weight: bold;
+    color: var(--hl-keyword);
+    font-weight: 500;
   }
   .kt, .nc {
-    color: #445588;
-    font-weight: bold;
+    color: var(--hl-type);
+    font-weight: 500;
   }
 
   // Numbers
   .m, .mb, .mx, .mf, .mh, .il, .mi, .mo {
-    color: #009999;
+    color: var(--hl-number);
   }
 
   // Strings
   .s, .dl, .sb, .sc, .sd, .s2, .se, .sh, .si, .sx, .s1 {
-    color: #d14;
+    color: var(--hl-string);
   }
   .sr {
-    color: #009926;
+    color: var(--hl-regex);
   }
   .ss {
-    color: #990073;
+    color: var(--hl-symbol);
   }
 
   // Names
   .na, .no, .vc, .vg, .vi, .nv, .vm {
-    color: #008080;
+    color: var(--hl-variable);
   }
   .nb {
-    color: #0086b3;
+    color: var(--hl-builtin);
   }
   .nd {
-    color: #3c5d5d;
-    font-weight: bold;
+    color: var(--hl-decorator);
+    font-weight: 500;
   }
   .ni {
-    color: #800080;
+    color: var(--hl-entity);
   }
   .ne, .nf, .fm, .nl {
-    color: #990000;
-    font-weight: bold;
+    color: var(--hl-function);
+    font-weight: 500;
   }
   .nn {
-    color: #555;
+    color: var(--hl-namespace);
   }
   .nt {
-    color: #000080;
+    color: var(--hl-tag);
   }
 
   // Whitespace
   .w {
-    color: #bbb;
+    color: var(--hl-comment);
   }
 }

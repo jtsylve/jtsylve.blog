@@ -4,23 +4,29 @@ layout: default
 
 <article class="post">
   <h1>{{ page.title }}</h1>
-  <div class="date">
-    {{ page.date | date: "%A, %B %e, %Y" }}
+  <div class="post-meta">
+    <time class="date" datetime="{{ page.date | date_to_xmlschema }}">
+      {{ page.date | date: "%B %e, %Y" }}
+    </time>
+    {% assign words = content | number_of_words %}
+    {% assign minutes = words | divided_by: 200 %}
+    {% if minutes < 1 %}{% assign minutes = 1 %}{% endif %}
+    <span class="reading-time" aria-label="Estimated reading time: {{ minutes }} minutes">~{{ minutes }} min read</span>
   </div>
 
   {{ content }}
 
   <p class="issues">Find an issue or technical inaccuracy in this post?  Please <a href="https://github.com/jtsylve/jtsylve.github.io/issues">file an issue</a> so that it may be corrected.</p>
 </article>
-<div class="navigation">
+<nav class="navigation" aria-label="Post navigation">
   <p class="prev">
     {% if page.previous.url %}
-    <a href="{{page.previous.url}}">&laquo; {{page.previous.title}}</a>
+    <a href="{{page.previous.url}}" aria-label="Previous post: {{page.previous.title | escape}}">&laquo; {{page.previous.title}}</a>
     {% endif %}
   </p>
   <p class="next">
     {% if page.next.url %}
-    <a href="{{page.next.url}}">{{page.next.title}} &raquo;</a>
+    <a href="{{page.next.url}}" aria-label="Next post: {{page.next.title | escape}}">{{page.next.title}} &raquo;</a>
     {% endif %}
   </p>
-</div>
+</nav>
