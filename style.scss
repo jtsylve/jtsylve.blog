@@ -289,16 +289,26 @@ nav {
     padding: 7px 7px 7px 10px;
     border: 1px solid $borderGray;
     box-shadow: 3px 3px rgba(0,0,0,0.1);
+    margin: 15px auto;
+  }
+
+  pre, img {
     // Break out of 75ch text column to use full container width
     max-width: var(--container-content-width);
     margin: 15px 0 15px 50%;
     transform: translateX(-50%);
   }
 
-  pre, table {
+  pre {
     overflow: auto;
     font-size: smaller;
     width: var(--container-content-width);
+  }
+
+  table {
+    overflow: auto;
+    font-size: smaller;
+    max-width: 100%;
   }
 
   th, td, dt {
