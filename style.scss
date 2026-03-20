@@ -27,14 +27,26 @@ body {
 
 .container {
   margin: 0 auto;
-  padding: 0 10px;
-  width: 95%;
+  max-width: 1100px;
+  width: 100%;
+  --container-padding: 40px;
+  --container-content-width: min(calc(100vw - var(--container-padding) * 2), calc(1100px - var(--container-padding) * 2));
+  padding: 0 var(--container-padding);
+
+  @include tablet {
+    --container-padding: 24px;
+  }
+
+  @include mobile {
+    --container-padding: 16px;
+  }
 }
 
 main {
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
+  padding-top: 8px;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -52,6 +64,11 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 {
   font-size: xx-large;
+
+  @include mobile {
+    font-size: x-large;
+  }
+
   a {
     color: inherit;
   }
@@ -76,6 +93,10 @@ p {
 a {
   color: $blue;
   text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 ul, ol {
@@ -132,8 +153,12 @@ img {
 .masthead {
   display: flex;
   align-items: center;
-  padding: 20px 10px;
+  padding: 20px 0;
   border-bottom: 1px solid $lightGray;
+
+  @include tablet {
+    flex-wrap: wrap;
+  }
 
   @include mobile {
     flex-direction: column;
@@ -162,6 +187,10 @@ img {
   font-weight: 300;
   font-size: 1.5rem;
   letter-spacing: 1px;
+
+  a:hover {
+    text-decoration: none;
+  }
 }
 
 .site-description {
@@ -188,10 +217,18 @@ nav {
     color: $darkGray;
     font-weight: 300;
     letter-spacing: 1px;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $blue;
+      text-decoration: none;
+    }
 
     @include mobile {
       margin: 0 10px;
       color: $blue;
+      @include touch-target;
+      justify-content: center;
     }
   }
 }
@@ -201,8 +238,12 @@ nav {
 //
 
 .posts > .post {
-  padding-bottom: 2em;
+  padding: 2em 0;
   border-bottom: 1px solid $lightGray;
+
+  &:first-child {
+    padding-top: 0;
+  }
 
   &:last-child {
     padding-bottom: 1em;
@@ -211,7 +252,8 @@ nav {
 }
 
 .post {
-  max-width: 100ch;
+  max-width: 75ch;
+  width: 100%;
   margin: 0 auto;
 
   blockquote {
@@ -229,6 +271,11 @@ nav {
   .read-more {
     text-transform: uppercase;
     font-weight: bold;
+    font-size: smaller;
+    letter-spacing: 0.5px;
+    transition: color 0.2s ease;
+    display: inline-block;
+    padding: 12px 0;
   }
 
   .issues {
@@ -242,12 +289,16 @@ nav {
     padding: 7px 7px 7px 10px;
     border: 1px solid $borderGray;
     box-shadow: 3px 3px rgba(0,0,0,0.1);
-    margin: 15px auto;
+    // Break out of 75ch text column to use full container width
+    max-width: var(--container-content-width);
+    margin: 15px 0 15px 50%;
+    transform: translateX(-50%);
   }
 
   pre, table {
     overflow: auto;
     font-size: smaller;
+    width: var(--container-content-width);
   }
 
   th, td, dt {
@@ -271,7 +322,7 @@ nav {
   .message {
     border: medium darkred solid;
     padding: 0 15px;
-    max-width: 80ch;
+    max-width: 65ch;
     margin: 35px auto;
     font-size: smaller;
     background-color: $lightGray;
@@ -290,9 +341,12 @@ nav {
 .navigation {
   display: flex;
   justify-content: space-between;
+  align-items: baseline;
   font-size: medium;
   font-weight: bold;
   margin-top: auto;
+  padding: 24px 0;
+  width: 100%;
 
   > * { flex: 1; }
 
@@ -301,19 +355,46 @@ nav {
     overflow: hidden;
   }
 
-  .current { text-align: center; }
+  a {
+    @include touch-target;
+  }
+
+  .current {
+    text-align: center;
+    color: $gray;
+    font-weight: normal;
+  }
 
   .next { text-align: right; }
+
+  @include mobile {
+    font-size: small;
+    padding: 16px 0;
+  }
 }
 
 footer {
-  margin: 0 auto;
-  padding: 20px 10px;
-  width: 95%;
+  padding: 24px 40px;
   border-top: 1px solid $borderGray;
-  border-bottom: 1px solid $borderGray;
   background-color: $lightGray;
   text-align: center;
+
+  @include tablet {
+    padding: 20px 24px;
+  }
+
+  @include mobile {
+    padding: 16px;
+  }
+
+  a {
+    @include touch-target;
+    justify-content: center;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
 
   p {
     font-size: x-small;

@@ -18,9 +18,23 @@ $white: #fff;
 $helvetica: Helvetica, Arial, sans-serif;
 $helveticaNeue: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-// Mobile breakpoints
+// Breakpoints
 @mixin mobile {
   @media screen and (max-width: 640px) {
     @content;
   }
+}
+
+@mixin tablet {
+  @media screen and (max-width: 900px) {
+    @content;
+  }
+}
+
+// Accessible touch target (WCAG 2.5.8 minimum 44x44px)
+@mixin touch-target {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
 }
