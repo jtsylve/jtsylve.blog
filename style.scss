@@ -30,7 +30,6 @@ body {
   max-width: 1100px;
   width: 100%;
   --container-padding: 40px;
-  --container-content-width: min(calc(100vw - var(--container-padding) * 2), calc(1100px - var(--container-padding) * 2));
   padding: 0 var(--container-padding);
 
   @include tablet {
@@ -153,7 +152,7 @@ img {
 .masthead {
   display: flex;
   align-items: center;
-  padding: 20px 0;
+  padding: 20px var(--container-padding);
   border-bottom: 1px solid $lightGray;
 
   @include tablet {
@@ -252,8 +251,6 @@ nav {
 }
 
 .post {
-  max-width: 75ch;
-  width: 100%;
   margin: 0 auto;
 
   blockquote {
@@ -292,20 +289,7 @@ nav {
     margin: 15px auto;
   }
 
-  pre, img {
-    // Break out of 75ch text column to use full container width
-    max-width: var(--container-content-width);
-    margin: 15px 0 15px 50%;
-    transform: translateX(-50%);
-  }
-
-  pre {
-    overflow: auto;
-    font-size: smaller;
-    width: var(--container-content-width);
-  }
-
-  table {
+  pre, table {
     overflow: auto;
     font-size: smaller;
     max-width: 100%;
@@ -332,7 +316,7 @@ nav {
   .message {
     border: medium darkred solid;
     padding: 0 15px;
-    max-width: 65ch;
+    max-width: 80ch;
     margin: 35px auto;
     font-size: smaller;
     background-color: $lightGray;
