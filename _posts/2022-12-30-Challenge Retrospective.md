@@ -1,6 +1,8 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 22 - Retrospective
+title: 2022 APFS Advent Challenge - Retrospective
+categories: [meta]
+tags: [advent-2022, retrospective]
 ---
 
 As 2022 ends, so does my APFS Advent Challenge. Deciding at the last minute to write this series of blogs turned out to be even more challenging than expected. Life tends to find a way to complicate things, and December was no exception for me this year. I am glad I stuck with the challenge and hope that the information provided in the series was of some value to you.
@@ -21,5 +23,3 @@ If it is within your means, please donate to help the Ukrainian people.  Regardl
 
 I decided to start this blog as part of my resolution to write more in 2023 and share my research. The advent challenge was a good way of kick-starting that effort. I plan on continuing to post, albeit at a much less demanding pace. If there are any topics about APFS or anything else in digital forensics that you are interested in learning more about, please feel free to reach out to me. I've decided to sunset my Twitter account, but you'll find me active on Mastodon [@jtsylve@infosec.exchange](https://infosec.exchange/@jtsylve).
 
-
-{% include advent2022.html %}

@@ -1,6 +1,8 @@
 ---
 layout: post
 title: 2022 APFS Advent Challenge - A Change of Plans
+categories: [meta]
+tags: [advent-2022]
 ---
 
 {:i1: style="text-align: center; max-width: 500px; margin: 0 auto;"}
@@ -17,4 +19,3 @@ To preserve content quality, and for the sake of my own mental health, I've deci
 
 This new schedule guarantees that there will be at least two fewer posts than originally promised, so I have donated $200 to the [Ukraine Humanitarian Fund](https://www.gofundme.com/f/ukraine-humanitarian-fund) as promised.  Check back on Monday, when we'll be discussing APFS Containers.
 
-{% include advent2022.html %}

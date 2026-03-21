@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 9 - Volume Superblock Objects
+title: Volume Superblock Objects
+series: "APFS Internals"
+series_part: 9
+categories: [file-systems, apfs]
+tags: [apfs, volumes, superblock]
 ---
 
 The _Volume Superblock_ is a data structure containing key information about an individual APFS volume. This post covers locating the Volume Superblock on disk and describes the on-disk format’s fields.
@@ -223,4 +227,3 @@ typedef struct apfs_modified_by {
 
 Locating and analyzing Volume Superblocks are essential early steps in being able to parse the contents of their file systems.  Our next post will discuss the volume’s File System Tree, a specialized B-Tree that stores the bulk of the file systems’ metadata objects.
 
-{% include advent2022.html %}

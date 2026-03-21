@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 7 - B-Trees (Part 2)
+title: B-Trees (Part 2)
+series: "APFS Internals"
+series_part: 7
+categories: [file-systems, apfs]
+tags: [apfs, btrees, indexing]
 ---
 
 Mastering the skill of B-Tree traversal is essential in parsing information from APFS. Our [last post](/post/2022/12/08/APFS-BTrees) gave an overview of APFS B-Trees, their layout, and on-disk node structures.  Today, we will discuss applying that knowledge to perform enumeration and fast lookups of referenced objects.  
@@ -36,7 +40,3 @@ We could use enumeration to look up a value by its key as with Checkpoint Maps, 
 Understanding the structure and traversal of APFS B-Trees is essential for effectively parsing information from this file system. We discussed methods for enumerating all values in linear time and performing faster logarithmic-time lookups of specific values.
 
 B-Trees are used in many ways in APFS.  In the next post, we will discuss _Object Map_ B-Trees and how they can be used to access virtual objects.
-
-
-
-{% include advent2022.html %}

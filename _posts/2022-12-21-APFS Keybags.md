@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 15 - Keybags
+title: Keybags
+series: "APFS Internals"
+series_part: 14
+categories: [file-systems, apfs]
+tags: [apfs, keybags, encryption]
 ---
 
 APFS is designed with encryption in mind and removes the need for the [Core Storage layer](https://en.wikipedia.org/wiki/Core_Storage) used to provide encryption in HFS+. When you enable encryption on a volume, the entire [_File System Tree_](/post/2022/12/15/APFS-FSTrees) and the contents of files within that volume are encrypted. The type of encryption depends on the capabilities of the hardware that it is running on. For example, hardware encryption is used for internal storage on devices that support it, such as macOS computers with T2, M1, or M2 security chips and all iOS devices. Software encryption is used for external and internal storage devices without hardware encryption support. When hardware encryption is used, the data cannot be decrypted on any other device.  For our purposes, we will focus on the software encryption mechanisms used in macOS.  The hardware encryption functions similarly, but the security chip must broker all decryption operations.
@@ -131,8 +135,3 @@ _Passphrase Hint Records_ are stored with the `ke_tag` value of `KB_TAG_VOLUME_P
 
 This post covered APFS Keybags and their on-disk structures.  In our next post, we will discuss methods of unwrapping and using the decryption keys.
 
-
-
-
-
-{% include advent2022.html %}

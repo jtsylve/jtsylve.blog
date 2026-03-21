@@ -28,6 +28,9 @@ plugins:
   - jekyll-feed
   - jekyll-paginate
 
+include:
+  - _pages
+
 exclude:
   - Gemfile
   - Gemfile.lock
@@ -35,5 +38,5 @@ exclude:
   - README.md
   - CNAME
 
-paginate: 5
+paginate: 10
 paginate_path: "/page/:num/"

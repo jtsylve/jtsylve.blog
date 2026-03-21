@@ -37,14 +37,14 @@
 @mixin dark-colors {
   --color-bg: #0f0f14;
   --color-bg-elevated: #1a1a24;
-  --color-bg-code: #16161e;
+  --color-bg-code: #1c1c28;
   --color-text-primary: #e4e4ef;
   --color-text-secondary: #a1a1b5;
   --color-text-tertiary: #9e9eb0;
   --color-border: #2a2a3a;
   --color-border-functional: #4a4a5e;
-  --color-accent: #7e9abf;
-  --color-accent-hover: #a0b5d2;
+  --color-accent: #6b8aff;
+  --color-accent-hover: #93acff;
   --color-selection-bg: #2e3f7a;
 }
 
@@ -59,8 +59,6 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
 
   // Typography
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -76,11 +74,13 @@
 
   // Transitions
   --duration-fast: 120ms;
+  --duration-normal: 200ms;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   // Radius
   --radius-sm: 4px;
   --radius-md: 6px;
+  --radius-lg: 8px;
 
   // Container padding (responsive)
   --container-padding: 40px;

@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 12 - Inode and Directory Records
+title: Inode and Directory Records
+series: "APFS Internals"
+series_part: 11
+categories: [file-systems, apfs]
+tags: [apfs, inodes, directories]
 ---
 
 Each APFS [_file system entry_](/post/2022/12/15/APFS-FSTrees) has both an _inode_ and _directory record_. The inode record stores metadata such as the entry’s timestamps, ownership, type, and permissions (among others). Directory records store information about where the entry is stored within the file system’s hierarchy. A single inode may be referenced by more than one directory record, meaning the same file or folder may be present at multiple paths in the file system, as is the case with hard links.
@@ -238,4 +242,3 @@ XF_SYSTEM_FIELD | 0x0020 | This extended field was added by the kernel
 XF_RESERVED_40 | 0x0040 | _reserved_
 XF_RESERVED_80 | 0x0080 | _reserved_
 
-{% include advent2022.html %}

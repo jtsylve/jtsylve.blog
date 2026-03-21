@@ -19,10 +19,17 @@
         wrapper.appendChild(table);
     });
 
-    // Make scrollable code blocks and table wrappers keyboard-accessible (WCAG SC 2.1.1)
-    document.querySelectorAll("pre, .table-wrapper").forEach(function(el) {
-        if (el.scrollWidth > el.clientWidth) {
+    // Make scrollable containers keyboard-accessible (WCAG SC 2.1.1)
+    document.querySelectorAll("pre, .table-wrapper, .series-toc").forEach(function(el) {
+        if (el.scrollWidth > el.clientWidth || el.scrollHeight > el.clientHeight) {
             el.setAttribute("tabindex", "0");
+            el.setAttribute("role", "region");
+            var label = el.classList.contains("series-toc")
+              ? "Series table of contents"
+              : el.classList.contains("table-wrapper")
+              ? "Scrollable table"
+              : "Scrollable code block";
+            el.setAttribute("aria-label", label);
         }
     });
 </script>

@@ -1,0 +1,56 @@
+{% if page.series %}
+  {% assign series_posts = site.posts | where: "series", page.series
+     | sort: "series_part" %}
+  {% assign current_index = nil %}
+  {% for p in series_posts %}
+    {% if p.url == page.url %}
+      {% assign current_index = forloop.index0 %}
+    {% endif %}
+  {% endfor %}
+
+  {% if current_index != nil %}
+    {% assign prev_index = current_index | minus: 1 %}
+    {% assign next_index = current_index | plus: 1 %}
+
+    <nav class="navigation" aria-label="Previous and next in series">
+      <p class="prev">
+        {% if prev_index >= 0 %}
+          {% assign prev_post = series_posts[prev_index] %}
+          <a href="{{ prev_post.url }}"
+             aria-label="Previous in series: {{ prev_post.title }}">
+            &larr; {{ prev_post.title }}
+          </a>
+        {% endif %}
+      </p>
+      <p class="next">
+        {% if next_index < series_posts.size %}
+          {% assign next_post = series_posts[next_index] %}
+          <a href="{{ next_post.url }}"
+             aria-label="Next in series: {{ next_post.title }}">
+            {{ next_post.title }} &rarr;
+          </a>
+        {% endif %}
+      </p>
+    </nav>
+  {% endif %}
+
+{% else %}
+  <nav class="navigation" aria-label="Post navigation">
+    <p class="prev">
+      {% if page.previous.url %}
+      <a href="{{ page.previous.url }}"
+         aria-label="Previous post: {{ page.previous.title | escape }}">
+        &laquo; {{ page.previous.title }}
+      </a>
+      {% endif %}
+    </p>
+    <p class="next">
+      {% if page.next.url %}
+      <a href="{{ page.next.url }}"
+         aria-label="Next post: {{ page.next.title | escape }}">
+        {{ page.next.title }} &raquo;
+      </a>
+      {% endif %}
+    </p>
+  </nav>
+{% endif %}

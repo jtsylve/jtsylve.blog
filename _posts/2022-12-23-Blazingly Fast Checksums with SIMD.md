@@ -1,6 +1,8 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 17 - Blazingly Fast Checksums with SIMD
+title: Blazingly Fast Checksums with SIMD
+categories: [file-systems, apfs, hpc]
+tags: [apfs, simd, checksums, performance]
 ---
 
 Today's post will take on a bit of a different style than the previous posts in this series.  Among other things, I spent my day putting off writing the final APFS encryption blog post by pursuing [another one of my New Year goals](https://infosec.exchange/@jtsylve/109554998044590227).  Along the way, I wrote a Fletcher64 hashing function that can validate APFS objects at over 31 GiB/s on my 2017 iMac Pro. Rather than fighting my procrastination, I decided it would be better to share my findings. Given that my chosen learning path was directly relevant to APFS, I'm counting this as a valid APFS Advent Challenge post (and you can't stop me!).  I hope you enjoy this brief detour into the dark arts of cross-platform SIMD programming. 
@@ -145,4 +147,3 @@ For the proper application, SIMD vectorization can provide fantastic performance
 
 I [further improved](/post/2022/12/24/Blazingly-Fast-er-SIMD-Checksums) this code's performance to achieve even better performance!
 
-{% include advent2022.html %}
