@@ -9,6 +9,7 @@
       (function(){var t=localStorage.getItem('theme');
       if(t)document.documentElement.setAttribute('data-theme',t)})();
     </script>
+    <link rel="icon" href="{{ site.baseurl }}/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="{{ site.baseurl }}/style.css">
     <link rel="alternate" type="application/rss+xml" title="{{ site.name | escape }} - {{ site.description | escape }}" href="{{ site.baseurl }}/feed.xml">
 
@@ -27,8 +28,10 @@
       </div>
 
       <nav aria-label="Site navigation">
-        <a href="{{ site.baseurl }}/">Blog</a>
+        <a href="{{ site.baseurl }}/apfs/">APFS Series</a>
         <a href="https://docs.google.com/document/d/14XJWinqmcUz45un0Sl53M1F7dE6OPiRBfZsf4zm_x9w/edit">CV</a>
+        <a href="https://github.com/{{ site.footer-links.github }}">GitHub</a>
+      
         <button class="theme-toggle" aria-label="Toggle dark mode">
           <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="5"/>
@@ -57,10 +60,12 @@
         {% include svg-icons.html %}
       </div>
       <p>Copyright 2022-{{ site.time | date: '%Y' }} - Joe T. Sylve, Ph.D.</p>
-      <p>All views and opinions expressed on this blog are my own, and do not represent those of my employers.</p>
+      <p>All views and opinions expressed on this blog are my own.</p>
     </footer>
 
-    {% include ext-links.html %}
+    {% include dom-enhancements.html %}
     <script src="{{ site.baseurl }}/assets/js/theme-toggle.js"></script>
+    <script src="{{ site.baseurl }}/assets/js/code-copy.js"></script>
+    <script src="{{ site.baseurl }}/assets/js/heading-anchors.js"></script>
   </body>
 </html>

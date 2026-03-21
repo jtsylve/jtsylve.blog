@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 18 - Decryption
+title: Decryption
+series: "APFS Internals"
+series_part: 16
+categories: [file-systems, apfs]
+tags: [apfs, decryption, encryption]
 ---
 
 Now that we know how to parse the [File System Tree](/post/2022/12/15/APFS-FSTrees), [analyze keybags](/post/2022/12/21/APFS-Keybags), and [unwrap decryption keys](/post/2022/12/22/APFS-Wrapped-Keys), it's time to put it all together and learn how to decrypt file system metadata and file data on encrypted volumes in APFS.
@@ -53,5 +57,3 @@ We've now discussed all of the information needed to access data on software-enc
 
 _Full disclosure:  I currently work for Cellebrite and helped develop these capabilities.  I do not directly profit from the sales of Digital Collector but felt it appropriate to disclose my association when linking to a commercial product.  I am not trying to sell you anything.  Unfortunately, I am also not at liberty to discuss the methodology used to facilitate this decryption._
 
-
-{% include advent2022.html %}

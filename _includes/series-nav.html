@@ -1,0 +1,26 @@
+{% if page.series %}
+{% assign series_posts = site.posts | where: "series", page.series
+   | sort: "series_part" %}
+{% assign total = series_posts | size %}
+
+<nav class="series-nav" aria-label="Series navigation">
+  <details>
+    <summary>
+      {{ page.series }}
+      <span class="series-position">Part {{ page.series_part }} of {{ total }}</span>
+    </summary>
+    <div class="series-divider"></div>
+    <ol class="series-toc">
+      {% for post in series_posts %}
+      <li{% if post.url == page.url %} class="current" aria-current="page"{% endif %}>
+        {% if post.url == page.url %}
+          <span>{{ post.series_part }}. {{ post.title | remove: "2022 APFS Advent Challenge " }}</span>
+        {% else %}
+          <a href="{{ post.url }}">{{ post.series_part }}. {{ post.title | remove: "2022 APFS Advent Challenge " }}</a>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </details>
+</nav>
+{% endif %}

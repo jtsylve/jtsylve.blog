@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 14 - Sealed Volumes
+title: Sealed Volumes
+series: "APFS Internals"
+series_part: 13
+categories: [file-systems, apfs]
+tags: [apfs, sealed-volumes, integrity]
 ---
 
 With the release of macOS 11, Apple added a security feature to APFS called _sealed volumes_.  Sealed volumes can be used to cryptographically verify the contents of the read-only _system_ volume as an additional layer of protection against rootkits and other malware that may attempt to replace critical components of the operating system.  Sealed volumes have subtle differences from some of the properties of file systems that we've discussed so far.
@@ -95,4 +99,3 @@ typedef struct fext_tree_val {
 
 Sealed Volumes in APFS provide an extra layer of security by allowing macOS to verify its system volume cryptographically. This post described some of the subtle differences in analyzing sealed volumes.
 
-{% include advent2022.html %}

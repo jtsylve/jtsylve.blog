@@ -1,6 +1,8 @@
 ---
 layout: post
 title: A Copy-Paste Bug That Broke PSpice® AES-256 Encryption
+categories: [security-research, encryption]
+tags: [pspice, aes, brute-force, reverse-engineering, vulnerability]
 ---
 
 PSpice is a SPICE circuit simulator from Cadence Design Systems that encrypts proprietary semiconductor model files to protect vendor IP and prevent reuse in third-party SPICE simulators.  The encryption scheme is proprietary and undocumented.

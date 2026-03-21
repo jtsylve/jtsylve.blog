@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 11 - File System Trees
+title: File System Trees
+series: "APFS Internals"
+series_part: 10
+categories: [file-systems, apfs]
+tags: [apfs, fstrees, volumes]
 ---
 
 Each APFS volume has a logical file system stored on disk as a collection of File System Objects. Unlike other [APFS Objects](/post/2022/12/01/Anatomy-of-an-APFS-Object), File System Objects consist of one or more File System Records, which are stored in the volume’s File System Tree (FS-Tree). Each record stores specific information about a file or directory. Analyzing each record and associating them with other records with the same identifier gives a complete picture of the file system entry. This post will discuss how these records are organized in the volume's FS-Tree.
@@ -60,4 +64,3 @@ APFS_TYPE_FILE_INFO | 13 | Additional information about file data
 
 The File System Tree (FS-Tree) in an APFS volume is a specialized B-Tree that stores information about the files and directories on the volume. A unique object identifier and type identify each record in the tree, and the FS-Tree is ordered by these keys. FS-Tree nodes can be encrypted, and the tree takes advantage of the Object Map’s snapshotting capabilities. By analyzing the records in the FS-Tree, one can gain a complete understanding of the volume’s file system. In our next post, we will discuss the details of some of these records.
 
-{% include advent2022.html %}

@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 3 - Containers
+title: Containers
+series: "APFS Internals"
+series_part: 3
+categories: [file-systems, apfs]
+tags: [apfs, containers]
 ---
 
 APFS is a _pooled storage_, _transactional_, _copy-on-write_ file system.  Its design relies on a core management layer known as the _Container_.  APFS containers consist of a collection of several specialized components: The _Space Manager_, the _Checkpoint Areas_, and the _Reaper_.  In today's post, we will give an overview of APFS containers and these components.
@@ -45,7 +49,3 @@ Once a checkpoint transaction is successfully flushed to disk, APFS may choose t
 ## Conclusion
 
 Containers provide the core management layer of APFS using several specialized subsystems.  This post gives a general overview of each of these components.  Future posts in this series will discuss each of these components in more detail, including information on how to interpret their on-disk structures.
-
-
-
-{% include advent2022.html %}

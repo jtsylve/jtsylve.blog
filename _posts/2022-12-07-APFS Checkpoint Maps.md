@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 5 - Checkpoint Maps and Ephemeral Objects
+title: Checkpoint Maps and Ephemeral Objects
+series: "APFS Internals"
+series_part: 5
+categories: [file-systems, apfs]
+tags: [apfs, checkpoints, ephemeral]
 ---
 
 In our [last post](/post/2022/12/06/APFS-NX-Superblock), we discussed _NX Superblock Objects_ and how they can be used to locate the _Checkpoint Descriptor Area_ in which they are stored.  Today, we will discuss the other type of objects that are stored in the descriptor area, _Checkpoint Maps_, and how they can be used to find persistent, ephemeral objects on disk. 
@@ -81,4 +85,3 @@ Compared to other kinds of objects in APFS, each checkpoint only maintains a rel
 
 If only it were always that simple...  Next up in this series we will discuss B-Trees -- APFS's method of choice for referencing potentially large sets of data on disk.
 
-{% include advent2022.html %}

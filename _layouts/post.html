@@ -3,7 +3,17 @@ layout: default
 ---
 
 <article class="post">
+  {% include series-nav.html %}
+
+  {% if page.series %}
+  <span class="post-category">{{ page.series }}
+    &middot; Part {{ page.series_part }}</span>
+  {% elsif page.categories.size > 0 %}
+  <span class="post-category">{{ page.categories | first | replace: "-", " " | capitalize }}</span>
+  {% endif %}
+
   <h1>{{ page.title }}</h1>
+
   <div class="post-meta">
     <time class="date" datetime="{{ page.date | date_to_xmlschema }}">
       {{ page.date | date: "%B %e, %Y" }}
@@ -11,22 +21,16 @@ layout: default
     {% assign words = content | number_of_words %}
     {% assign minutes = words | divided_by: 200 %}
     {% if minutes < 1 %}{% assign minutes = 1 %}{% endif %}
-    <span class="reading-time" aria-label="Estimated reading time: {{ minutes }} minutes">~{{ minutes }} min read</span>
+    <span class="separator">&middot;</span>
+    <span class="reading-time"
+          aria-label="Estimated reading time: {{ minutes }} minutes">
+      ~{{ minutes }} min read
+    </span>
   </div>
 
   {{ content }}
 
   <p class="issues">Find an issue or technical inaccuracy in this post?  Please <a href="https://github.com/jtsylve/jtsylve.github.io/issues">file an issue</a> so that it may be corrected.</p>
 </article>
-<nav class="navigation" aria-label="Post navigation">
-  <p class="prev">
-    {% if page.previous.url %}
-    <a href="{{page.previous.url}}" aria-label="Previous post: {{page.previous.title | escape}}">&laquo; {{page.previous.title}}</a>
-    {% endif %}
-  </p>
-  <p class="next">
-    {% if page.next.url %}
-    <a href="{{page.next.url}}" aria-label="Next post: {{page.next.title | escape}}">{{page.next.title}} &raquo;</a>
-    {% endif %}
-  </p>
-</nav>
+
+{% include post-nav.html %}

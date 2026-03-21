@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 21 - Fusion Containers
+title: Fusion Containers
+series: "APFS Internals"
+series_part: 18
+categories: [file-systems, apfs]
+tags: [apfs, fusion, containers]
 ---
 
 As we discussed in [an earlier post](/post/2022/12/05/APFS-Containers), Apple’s [Fusion Drives](https://en.wikipedia.org/wiki/Fusion_Drive) combine the storage capacity of a hard disk drive (HDD) with the faster access speed of a solid state drive (SSD). The HDD is the primary storage device, and the SSD acts as a cache for recently accessed data. However, the Fusion Drive does not have built-in caching logic, and the operating system treats the two drives as separate storage devices.   Apple created [Core Storage](https://en.wikipedia.org/wiki/Core_Storage) to support the desired caching capabilities and the ability to pool the storage of each device into a single logical volume. APFS removes the need for Core Storage by having first-class support for this tiered storage model.  This post will go into more detail about APFS _Fusion Containers_.
@@ -29,7 +33,3 @@ if (paddr < first_tier2_block) {
 ```
 
 The logically exabyte-scale gap separating the two tiers presents a unique problem during digital forensic imaging of Fusion Containers.  To preserve the logical offsets of the evidence without having to use a data center worth of storage, you must use an evidence storage format that supports _sparse_ imaging.  As long as this is considered along with the additional physical address translation described above, analyzing Fusion Containers does not generally differ from analyzing other APFS containers.
-
-
-
-{% include advent2022.html %}

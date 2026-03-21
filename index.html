@@ -2,22 +2,64 @@
 layout: default
 ---
 
+<h1 class="sr-only">Joe T. Sylve, Ph.D. &ndash; Blog</h1>
+
+{% assign latest = site.posts | first %}
+
+{% if paginator.page == 1 %}
+<!-- Hero row: featured post + series callout -->
+<div class="hero-row">
+  <article class="hero-card">
+    <span class="hero-label">Latest</span>
+    <h2><a href="{{ latest.url }}">{{ latest.title }}</a></h2>
+    <time class="date" datetime="{{ latest.date | date_to_xmlschema }}">
+      {{ latest.date | date: "%B %e, %Y" }}
+    </time>
+    <p>{{ latest.excerpt | strip_html | truncatewords: 25 }}</p>
+    <a href="{{ latest.url }}" class="read-more">
+      Read more
+      <span class="sr-only">: {{ latest.title }}</span>
+    </a>
+  </article>
+
+  <div class="hero-card">
+    <span class="hero-label">Series</span>
+    <h2>APFS Internals</h2>
+    <p>An 18-part deep dive into the Apple File System covering on-disk structures, B-Trees, encryption, and more.</p>
+    <a href="/apfs/" class="read-more">
+      View the series
+      <span class="sr-only">: APFS Internals</span>
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<!-- Post list -->
 <div class="posts">
+  <h2 class="section-heading">Posts (Page {{ paginator.page }} of {{ paginator.total_pages }})</h2>
   {% for post in paginator.posts %}
-    <article class="post">
-
-      <h2><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h2>
-      <div class="date">
-        {{ post.date | date: "%B %e, %Y" }}
+    {% if paginator.page != 1 or post.url != latest.url %}
+    <article class="post-item">
+      <div>
+        <h3><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h3>
+        <p class="post-item-excerpt">{{ post.excerpt | strip_html | truncatewords: 20 }}</p>
+        <div class="post-item-meta">
+          {% if post.series %}
+          <span class="post-item-tag">{{ post.series }} &middot; Part {{ post.series_part }}</span>
+          {% elsif post.categories.size > 0 %}
+          <span class="post-item-tag">{{ post.categories | first | replace: "-", " " | capitalize }}</span>
+          {% endif %}
+        </div>
       </div>
-
-      <div class="excerpt">{{ post.excerpt }}</div>
-
-      <a href="{{ site.baseurl }}{{ post.url }}" class="read-more">Read more<span class="sr-only">: {{ post.title }}</span></a>
+      <time class="date" datetime="{{ post.date | date_to_xmlschema }}">
+        {{ post.date | date: "%b %e, %Y" }}
+      </time>
     </article>
+    {% endif %}
   {% endfor %}
 </div>
 
+<!-- Pagination -->
 <nav class="navigation" aria-label="Pagination">
   <p class="prev">
     {% if paginator.previous_page %}

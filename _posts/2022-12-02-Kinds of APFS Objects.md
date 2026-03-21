@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 2 - Kinds of Objects
+title: Kinds of Objects
+series: "APFS Internals"
+series_part: 2
+categories: [file-systems, apfs]
+tags: [apfs, objects, virtual, physical, ephemeral]
 ---
 
 As we discussed in [our last post](/post/2022/12/01/Anatomy-of-an-APFS-Object), _objects_ are the fundamental building blocks of APFS.  While there are many different object _types_, each individual object can be one of three _kinds_: _physical_, _virtual_, or _ephemeral_.  While each of these objects can be found on disk, there are differences in their lifetimes as well as the techniques needed to locate them.
@@ -37,4 +41,3 @@ Like virtual objects, ephemeral objects are not located at fixed locations on di
 
 Given that we have limited guarantees about when and how often these objects are flushed to disk, ephemeral objects are limited to only those that are not critical to preserving the integrity of users' data, and that can be reconstructed entirely (or from previous versions) on-demand.  Still, ephemeral objects play an important role in APFS.  We will discuss several of the kinds of objects throughout this series.
 
-{% include advent2022.html %}

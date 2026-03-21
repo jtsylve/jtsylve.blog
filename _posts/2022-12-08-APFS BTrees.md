@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 6 - B-Trees (Part 1)
+title: B-Trees (Part 1)
+series: "APFS Internals"
+series_part: 6
+categories: [file-systems, apfs]
+tags: [apfs, btrees, indexing]
 ---
 
 In [yesterday's post](/post/2022/12/07/APFS-Checkpoint-Maps), we discussed Checkpoint Maps, the simple linear-time data structures that APFS uses to manage persistent, ephemeral objects.  Today, we will give a general overview of B-Trees and detail the layout and on-disk structures of B-Tree Nodes.  
@@ -164,4 +168,3 @@ B-Trees are data structures that provide fast access and efficient storage of ke
 
 In the next post, we will continue our discussion of B-Trees and detail methods of enumerating and looking up their referenced objects.
 
-{% include advent2022.html %}

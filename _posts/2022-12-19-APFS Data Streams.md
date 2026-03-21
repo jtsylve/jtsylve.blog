@@ -1,6 +1,10 @@
 ---
 layout: post
-title: 2022 APFS Advent Challenge Day 13 - Data Streams
+title: Data Streams
+series: "APFS Internals"
+series_part: 12
+categories: [file-systems, apfs]
+tags: [apfs, data-streams, extents]
 ---
 
 Data in APFS that is too large to store within records is stored elsewhere on disk and referenced by _data streams (`dstreams`)_.  Similar to _non-resident attributes_ in NTFS, APFS data streams manage a set of _extents_ that reference the number and order of blocks on the disk which contain external data.  In this post, we will discuss how _data streams_ are used in APFS to manage one or more [forks](https://en.wikipedia.org/wiki/Fork_(file_system)) of data in inodes as well as their record structures in the [_File System Tree_](/post/2022/12/15/APFS-FSTrees).
@@ -126,4 +130,3 @@ The `crypto_id` field is specific to encrypted volumes and will be discussed in 
 
 Understanding _data streams_ and their on-disk structures is essential to analyzing APFS.  This post discussed the _default data stream_, _extended attributes_, and _file extents_.  Later this week, we will discuss how parsing this information differs in both _Sealed_ and _Encrypted_ volumes.
 
-{% include advent2022.html %}
