@@ -378,14 +378,17 @@ article.post {
 
   h2 {
     margin-top: var(--space-8);
+    margin-bottom: var(--space-3);
   }
 
   h3 {
     margin-top: var(--space-6);
+    margin-bottom: var(--space-2);
   }
 
   h4 {
     margin-top: var(--space-4);
+    margin-bottom: var(--space-2);
   }
 
   blockquote {
@@ -414,6 +417,10 @@ article.post {
 
   pre, img {
     margin: var(--space-4) auto;
+  }
+
+  .highlighter-rouge {
+    margin: var(--space-4) 0;
   }
 
   pre, .highlight {
