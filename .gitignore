@@ -12,3 +12,4 @@ package.json
 .playwright-mcp
 .claude
 CLAUDE.md
+.mcp.json
