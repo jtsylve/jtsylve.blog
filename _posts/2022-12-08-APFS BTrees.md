@@ -108,9 +108,11 @@ typedef struct btree_node_phys {
 - `btn_level`: The number of child levels below this node
 - `btn_nkeys`: The number of keys stored in this node
 - `btn_table_space`: The location of the table of contents relative to the end of the `btree_node_phys_t` structure
-- `btn_free_space`: The location of free space relative to the beginning of the _key area_
-- `btn_key_free_list`: A linked list that tracks free space in the _key area_
-- `btn_val_free_list`: A linked list that tracks free space in the _value area_
+- `btn_free_space`: The location and size of contiguous free space between the key and value areas
+- `btn_key_free_list`: A linked list that tracks fragmented free space in the _key area_
+- `btn_val_free_list`: A linked list that tracks fragmented free space in the _value area_
+
+The total free space in a node is `btn_free_space.len` (contiguous shared space) + `btn_key_free_list.len` (fragmented key space) + `btn_val_free_list.len` (fragmented value space). When a node has sufficient total free space but lacks contiguous room for an insertion, APFS performs a _compaction_: all keys and values are repacked contiguously, eliminating fragmentation. The free lists use `nloc_t` entries as linked-list nodes (minimum 4 bytes each), threaded through the freed space itself.
 
 #### Node Flags
 
@@ -162,9 +164,33 @@ The area where key data is stored is called the _key area_ and begins immediatel
 The area where value data is stored is called the _value area_. For non-root nodes, the value area starts at the end of the node.  For root nodes, the start is before the `btree_info_t` structure.  This area grows upward towards the beginning of the node, and value offsets in the ToC are interpreted as negative offsets relative to this point.
 
 
+## Key and Value Alignment
+
+By default, keys and values within B-Tree nodes are aligned to 8-byte boundaries. Padding bytes between entries ensure proper alignment. When the `BTREE_KV_NONALIGNED` flag is set in the B-Tree info, alignment padding is disabled. Forensic tools must account for this padding when calculating the actual offsets of entries; the `x_size` or key/value lengths in the ToC do not include the padding.
+
+## Ghost and Empty-Value Entries
+
+B-Trees that have the `BTREE_ALLOW_GHOSTS` flag support two special entry types:
+
+- **Ghost entries** have a value offset of `0xFFFF`. These are entries with a key but no associated value. They serve as placeholders in the tree structure.
+- **Empty-value entries** use a value offset of `0xFFFE`. These represent entries whose value has been logically deleted but whose key slot is retained.
+
+When parsing B-Tree nodes, check for these sentinel values before attempting to read value data; treating `0xFFFF` or `0xFFFE` as actual offsets will read garbage.
+
+## Key Comparison
+
+Different B-Tree subtypes use different comparison functions for their keys. This is important because the comparison function determines the sort order and lookup semantics:
+
+- **Object Map trees** (`OMAP`): Compare `ok_oid` first, then `ok_xid`, both as unsigned 64-bit integers.
+- **File System trees** (`FSTREE`): Compare by object ID (lower 60 bits), then by type (upper 4 bits), then by subtype-specific key data (e.g., name hash and name bytes for directory records).
+- **Space Manager free queues** (`SPACEMAN_FREE_QUEUE`): Compare by `xid` first, then by physical address.
+- **Extent list trees** (`EXTENT_LIST_TREE`): Compare by logical block offset as unsigned 64-bit integers.
+
+The comparison function determines how lookups traverse the tree, so using the wrong comparison for a given tree subtype will produce incorrect results.
+
 ## Conclusion
 
-B-Trees are data structures that provide fast access and efficient storage of key/value data.  B-Trees are widely used in APFS and serve several specialized purposes.  
+B-Trees are data structures that provide fast access and efficient storage of key/value data. B-Trees are widely used in APFS and serve several specialized purposes. Correct parsing requires attention to alignment, ghost entries, and subtype-specific key comparison functions.
 
 In the next post, we will continue our discussion of B-Trees and detail methods of enumerating and looking up their referenced objects.
 

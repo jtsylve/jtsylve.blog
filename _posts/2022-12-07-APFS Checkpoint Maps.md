@@ -79,9 +79,35 @@ if (next_index == (nx_xp_desc_blocks & 0x7FFFFFFF)) {
 next_index = (current_index + 1) % (nx_xp_desc_blocks & 0x7FFFFFFF);
 ```
 
+## Checkpoint Validation
+
+When loading a checkpoint, each mapping block and its entries must be validated before the ephemeral objects they reference can be trusted:
+
+**Mapping block validation:**
+- `o_type` must be `OBJECT_TYPE_CHECKPOINT_MAP` with the physical flag set (`0x4000000C`)
+- `o_subtype` must be zero
+- `o_xid` must match the checkpoint superblock's `o_xid`
+- `o_oid` must equal the physical block address where the mapping block is stored
+- `cpm_count` must not exceed `(block_size - 40) / 40` (each `checkpoint_mapping_t` is 40 bytes, and the fixed header is 40 bytes)
+- The last mapping block must have `CHECKPOINT_MAP_LAST` set; earlier blocks must not
+
+**Per-entry validation:**
+- `cpm_type` must have `OBJ_EPHEMERAL` (`0x80000000`) set, and the low 16-bit type must be one of: `OBJECT_TYPE_BTREE` (2), `OBJECT_TYPE_BTREE_NODE` (3), `OBJECT_TYPE_SPACEMAN` (5), `OBJECT_TYPE_NX_REAPER` (0x11), or `OBJECT_TYPE_NX_REAP_LIST` (0x12)
+- `cpm_oid` must be nonzero
+- `cpm_paddr` must fall within the checkpoint data area
+- `cpm_size` must be nonzero, block-aligned, and fit within the data area bounds
+
+When reading ephemeral objects from the data area, verify each object's checksum and confirm that its `o_type`, `o_subtype`, `o_oid`, and `o_xid` match the corresponding mapping entry. If any ephemeral object is malformed or metadata ranges overlap, the entire checkpoint is invalid; the mount procedure must fall back to an older checkpoint from the descriptor area.
+
+## Recovery from Invalid Checkpoints
+
+If a checkpoint's mapping blocks or ephemeral objects fail validation, APFS does not give up. It falls back to scanning the checkpoint descriptor area for an older valid checkpoint with a lower transaction identifier. This is why the descriptor area is a circular buffer: it retains multiple checkpoints, and the mount procedure can walk backward to find one that is fully consistent.
+
+On untrusted storage (external or removable media), additional consistency checks are performed on recently-changed container structures. If these checks also fail, the mount procedure continues scanning backward. This ensures that even after a crash that corrupted the most recent checkpoint, the container can recover to a consistent state.
+
 ## Conclusion
 
-Compared to other kinds of objects in APFS, each checkpoint only maintains a relatively small number of on-disk ephemeral objects.  Due to their nature, these objects are likely all read into memory at once when the Checkpoint is mounted.  Thanks to these facts, ephemeral objects are stored on disk in a way that is relatively simple for us to find and enumerate.
+Compared to other kinds of objects in APFS, each checkpoint only maintains a relatively small number of on-disk ephemeral objects. Due to their nature, these objects are likely all read into memory at once when the Checkpoint is mounted. Thanks to these facts, ephemeral objects are stored on disk in a way that is relatively simple for us to find and enumerate. Proper validation of both the mapping blocks and the ephemeral objects they reference is essential for ensuring that the checkpoint represents a consistent state.
 
-If only it were always that simple...  Next up in this series we will discuss B-Trees -- APFS's method of choice for referencing potentially large sets of data on disk.
+If only it were always that simple... Next up in this series we will discuss B-Trees, APFS's method of choice for referencing potentially large sets of data on disk.
 

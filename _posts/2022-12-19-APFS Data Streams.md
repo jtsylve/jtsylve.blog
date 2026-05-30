@@ -73,8 +73,28 @@ XATTR_DATA_STREAM | 0x00000001 | The attribute data is stored in a data stream
 XATTR_DATA_EMBEDDED | 0x00000002 | The attribute data is stored directly in the record
 XATTR_FILE_SYSTEM_OWNED | 0x00000004 | The extended attribute record is owned by the file system
 XATTR_RESERVED_8 | 0x00000008 | _reserved_
+XATTR_PRIVATE_DSTREAM | 0x00000010 | The data is stored in a private temporary inode's data stream (combined with `XATTR_DATA_STREAM`)
 
-Like NTFS attributes, APFS extended attributes that are small enough can store their data directly in the attribute record itself.  In these instances, the `XATTR_DATA_EMBEDDED` flag will be set and the stream's data is stored in the `xdata` field.
+Exactly one of `XATTR_DATA_EMBEDDED` or `XATTR_DATA_STREAM` must be set. The maximum embedded payload size is 3804 bytes (`XATTR_MAX_EMBEDDED_SIZE`); xattrs exceeding this must use a data stream.
+
+Like NTFS attributes, APFS extended attributes that are small enough can store their data directly in the attribute record itself. In these instances, the `XATTR_DATA_EMBEDDED` flag will be set and the stream's data is stored in the `xdata` field.
+
+### Well-Known Extended Attributes
+
+Several extended attribute names have special meaning to APFS:
+
+{: style="margin-left: 0"}
+Name | Description
+-----|------------
+`com.apple.fs.symlink` | Target path for symbolic links (file-system-owned)
+`com.apple.fs.firmlink` | Target path for firmlinks (requires entitlement)
+`com.apple.fs.altlink` | Alternative symlink target on sealed volumes
+`com.apple.decmpfs` | Transparent compression metadata (see [DECMPFS](/post/2026/05/25/APFS-DECMPFS))
+`com.apple.ResourceFork` | Resource fork data (hidden for compressed files)
+`com.apple.fs.cow-exempt-file-count` | Count of COW-exempt files (on root directory)
+`com.apple.rootless` | System Integrity Protection flags
+`com.apple.system.fs.speculative_telemetry` | Speculative download telemetry (kernel-internal)
+`com.apple.BootInfo` | Boot file/directory inode numbers (on root directory)
 
 Instead, when the `XATTR_DATA_STREAM` flag is set, `xdata` stores a `j_xattr_dstream_t` structure.
 
@@ -120,13 +140,85 @@ typedef struct j_file_extent_val {
 - `phys_block_num`: The physical block number of the first block in the extent
 - `crypto_id`: The encryption key or tweak used in this extent (or zero if not encrypted)
 
-The eight _most significant bits_ of the `len_and_flags` field are reserved for flags, but no flags are currently defined.  
+The eight _most significant bits_ of the `len_and_flags` field encode flags. Two flags are currently defined:
+
+#### File Extent Flags
+
+{: style="margin-left: 0"}
+Name | Value | Description
+-----|-------|------------
+FEXT_CRYPTO_ID_IS_TWEAK | 0x01 | The `crypto_id` field contains a tweak value rather than a crypto state object identifier. Set when the volume uses single-key encryption (`APFS_FS_ONEKEY`).
+FEXT_ALLOCATED_UNWRITTEN | 0x02 | The extent's physical blocks are allocated but have not yet been written with user data. Reading these blocks returns zeroes. Cleared once data is written.
 
 If the value of `phys_block_num` is zero, then the extent is _sparse_ and should be interpreted as containing all zero bytes.
 
-The `crypto_id` field is specific to encrypted volumes and will be discussed in a future post.
+The `crypto_id` field is specific to encrypted volumes. For volumes using single-key encryption, it contains the AES-XTS tweak value. For per-file encryption, it matches the object identifier of the `j_crypto_val_t` record that describes the encryption state. New extents inherit their `crypto_id` from the `default_crypto_id` field of the containing `j_dstream_t`.
+
+## Physical Extent Records
+
+While _file extent records_ describe which blocks belong to a specific file, APFS also maintains _physical extent records_ that track ownership and reference counting at the physical block level. These records have the type `APFS_TYPE_EXTENT` and use the physical block address as their object identifier.
+
+```cpp
+typedef struct j_phys_ext_key {
+    j_key_t hdr; // 0x00
+} j_phys_ext_key_t;  // 0x08
+```
+- `hdr`: The record's header. The object identifier is the physical block address of the start of the extent.
+
+```cpp
+#define PEXT_LEN_MASK  0x0fffffffffffffffULL
+#define PEXT_KIND_MASK 0xf000000000000000ULL
+#define PEXT_KIND_SHIFT 60
+
+typedef struct j_phys_ext_val {
+    uint64_t len_and_kind;   // 0x00
+    uint64_t owning_obj_id;  // 0x08
+    int32_t refcnt;          // 0x10
+} j_phys_ext_val_t;          // 0x14
+```
+- `len_and_kind`: A bit-field encoding the extent length in blocks (lower 60 bits via `PEXT_LEN_MASK`) and its kind (upper 4 bits via `PEXT_KIND_MASK`)
+- `owning_obj_id`: The identifier of the data stream that owns this extent. For a file's primary data stream, this is the inode's `private_id`. For an extended attribute's data stream, this is the `xattr_obj_id`.
+- `refcnt`: The reference count for this extent. The extent's physical blocks can be freed when this count reaches zero.
+
+The `kind` field indicates the extent's relationship to snapshots. On a volume with no snapshots, the kind is always `APFS_KIND_NEW`. When snapshots exist, the kind helps determine whether an extent is shared with a snapshot and whether copy-on-write is needed.
+
+## Data Stream Identifiers
+
+APFS uses _data stream identifier records_ (type `APFS_TYPE_DSTREAM_ID`) to track how many inodes share the same set of file extents. This is the mechanism that enables efficient file cloning.
+
+```cpp
+typedef struct j_dstream_id_key {
+    j_key_t hdr; // 0x00
+} j_dstream_id_key_t; // 0x08
+```
+- `hdr`: The record's header. The object identifier matches the data stream's `private_id`.
+
+```cpp
+typedef struct j_dstream_id_val {
+    uint32_t refcnt; // 0x00
+} j_dstream_id_val_t; // 0x04
+```
+- `refcnt`: The reference count for this data stream. Tracks how many inodes share the same `private_id` (and thus the same set of file extents).
+
+When a file is cloned, the clone's `private_id` is set to the source's `private_id`, and this reference count is incremented. No file extent records are copied; both inodes share the same extents until one is modified. When the count transitions from 2 to 1, the sole remaining owner no longer needs copy-on-write semantics for that data stream.
+
+## Copy-on-Write Semantics
+
+Cloning a file in APFS (via `cp --clone` or the `clonefile` syscall) creates a new inode that shares all data extents with the source. Both the `INODE_WAS_CLONED` and `INODE_WAS_EVER_CLONED` flags are set on both files. The `j_dstream_id_val_t` reference count is incremented, but no physical data is duplicated.
+
+When a file with shared extents (`refcnt > 1` in its `j_phys_ext_val_t`) is subsequently modified:
+
+1. New physical blocks are allocated for the modified range.
+2. A new `j_file_extent_val_t` is created pointing to the new blocks.
+3. A new `j_phys_ext_val_t` is created with `refcnt = 1`.
+4. The original `j_phys_ext_val_t`'s `refcnt` is decremented.
+5. If the original extent's `refcnt` reaches zero, its physical blocks are freed.
+
+This means that after cloning, only the blocks that are actually modified require additional storage. Unmodified blocks remain shared between both files indefinitely (or until freed by both). The `INODE_WAS_EVER_CLONED` flag is never cleared once set, ensuring the file system always checks reference counts during writes to that inode, even if the clone is later deleted.
+
+On encrypted volumes with per-file keys, the clone initially receives a `crypto_id` of `APFS_UNASSIGNED_CRYPTO_ID` (`~0ULL`), meaning it continues using the original file's encryption state. If the clone is later modified, a new encryption state object is created for it with its own key.
 
 ## Conclusion
 
-Understanding _data streams_ and their on-disk structures is essential to analyzing APFS.  This post discussed the _default data stream_, _extended attributes_, and _file extents_.  Later this week, we will discuss how parsing this information differs in both _Sealed_ and _Encrypted_ volumes.
+Understanding _data streams_ and their on-disk structures is essential to analyzing APFS. This post discussed the _default data stream_, _extended attributes_, _file extents_, _physical extent records_ with reference counting, _data stream identifiers_, and the copy-on-write mechanics that enable efficient file cloning. Later this week, we will discuss how parsing this information differs in both _Sealed_ and _Encrypted_ volumes.
 

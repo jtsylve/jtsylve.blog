@@ -83,7 +83,7 @@ INODE_MAINTAIN_DIR_STATS | 0x00000002 | The inode tracks the size of all of its 
 INODE_DIR_STATS_ORIGIN | 0x00000004 | The inode has the `INODE_MAINTAIN_DIR_STATS` flag set explicitly, not due to inheritance
 INODE_PROT_CLASS_EXPLICIT | 0x00000008 | The inode's data protection class was set explicitly when the inode was created
 INODE_WAS_CLONED | 0x00000010 | The inode was created by cloning another inode
-INODE_FLAG_UNUSED | 0x00000020 | _reserved_
+INODE_WAS_PURGED | 0x00000020 | The inode's extents have been purged (set by background extent remover on purgeable files)
 INODE_HAS_SECURITY_EA | 0x00000040 | The inode has an access control list
 INODE_BEING_TRUNCATED | 0x00000080 | The inode was truncated
 INODE_HAS_FINDER_INFO | 0x00000100 | The inode has a Finder info extended field
@@ -101,6 +101,17 @@ INODE_IS_PURGEABLE | 0x00080000 | This inode will be deleted at the next purge
 INODE_WANTS_TO_BE_PURGEABLE | 0x00100000 | This inode should become purgeable when its link count drops to one
 INODE_IS_SYNC_ROOT | 0x00200000 | This inode is the root of a sync hierarchy for `fileproviderd`
 INODE_SNAPSHOT_COW_EXEMPTION | 0x00400000 | This inode is exempt from copy-on-write behavior if the data is part of a snapshot
+INODE_PROT_CLASS_UPGRADE_ROLLIP | 0x00800000 | Per-file key upgrade rotation is in progress for this inode
+INODE_PURGEABLE_MARK_CHILDREN | 0x02000000 | Mark children as purgeable when they are created in this directory
+INODE_HAS_SOURCE_PURGE_ID | 0x04000000 | The inode has an `INO_EXT_TYPE_SOURCE_PURGE_ID` extended field
+INODE_HAS_ATTRIBUTION_TAG | 0x10000000 | The inode has an attribution tag hash extended field
+INODE_MAINTAIN_SPECULATIVE_TELEMETRY | 0x20000000 | This inode participates in speculative telemetry tracking (inherited from parent)
+INODE_SPECULATIVE_TELEMETRY_ACTIVE | 0x40000000 | Speculative telemetry is actively recording state transitions for this inode
+
+Three compound flag masks are also useful for understanding flag inheritance:
+
+- `INODE_INHERITED_INTERNAL_FLAGS` (`MAINTAIN_DIR_STATS | SNAPSHOT_COW_EXEMPTION | MAINTAIN_SPECULATIVE_TELEMETRY`): Flags that new inodes inherit from their parent directory.
+- `INODE_CLONED_INTERNAL_FLAGS` (`HAS_RSRC_FORK | NO_RSRC_FORK | HAS_FINDER_INFO | SNAPSHOT_COW_EXEMPTION`): Flags that propagate from a source inode to its clone.
 
 ## Directory Records
 
@@ -241,4 +252,51 @@ XF_USER_FIELD | 0x0010 | This extended field was added by a user-space program
 XF_SYSTEM_FIELD | 0x0020 | This extended field was added by the kernel
 XF_RESERVED_40 | 0x0040 | _reserved_
 XF_RESERVED_80 | 0x0080 | _reserved_
+
+## Directory Statistics
+
+Directories with the `INODE_MAINTAIN_DIR_STATS` flag store a separate _directory statistics record_ (type `APFS_TYPE_DIR_STATS`) in the File System Tree. This record provides aggregate information about the directory and all its descendants.
+
+```cpp
+typedef struct j_dir_stats_key {
+    j_key_t hdr; // 0x00
+} j_dir_stats_key_t; // 0x08
+```
+- `hdr`: The record's header. The object identifier is the directory's inode number.
+
+```cpp
+typedef struct j_dir_stats_val {
+    uint64_t num_children; // 0x00
+    uint64_t total_size;   // 0x08
+    uint64_t chained_key;  // 0x10
+    uint64_t gen_count;    // 0x18
+} j_dir_stats_val_t;       // 0x20
+```
+- `num_children`: The total number of files and directories in this directory and its descendants (recursive count)
+- `total_size`: The total size, in bytes, of all files in this directory and its descendants. A hard-linked file contributes to `total_size` for each directory it appears in.
+- `chained_key`: The parent directory's file-system object identifier. This forms a chain that allows propagating size changes up the directory hierarchy.
+- `gen_count`: A monotonically increasing counter incremented each time this directory or its children are modified
+
+The `INODE_DIR_STATS_ORIGIN` flag distinguishes directories that explicitly have stats enabled from those that inherited it. The `chained_key` field allows size and count updates to propagate up the directory tree when files are created, deleted, or resized.
+
+## Directory Record Hash Computation
+
+The `name_len_and_hash` field in `j_drec_hashed_key_t` stores a precomputed hash used for efficient directory entry lookups. This hash is present on all volumes with `APFS_INCOMPAT_CASE_INSENSITIVE` or `APFS_INCOMPAT_NORMALIZATION_INSENSITIVE` set (which includes all default macOS and iOS volumes).
+
+The hash is computed as follows:
+
+1. Start with the filename as a null-terminated UTF-8 string.
+2. Normalize the string using canonical decomposition (NFD). If the volume has `APFS_INCOMPAT_NORMALIZATION_INSENSITIVE` set, also apply Unicode case folding during normalization.
+3. Represent the normalized filename as a sequence of UTF-32 code points (4 bytes each, little-endian). Do not include the null terminator.
+4. Compute the CRC-32C hash of the UTF-32 data with an initial CRC value of `0xFFFFFFFF`.
+5. Complement the bits of the hash (XOR with `0xFFFFFFFF`).
+6. Keep only the low 22 bits.
+
+This hash enables the B-Tree to quickly narrow down candidate entries without performing full Unicode normalization on every comparison. During lookups, the `name_len_and_hash` field is compared numerically first; only entries with matching hashes proceed to a full byte-by-byte name comparison.
+
+On case-insensitive volumes, two filenames that differ only in case (e.g., `README.md` and `readme.md`) produce the same hash and are treated as the same entry. The case folding in step 2 ensures this.
+
+## Conclusion
+
+Inode and directory records form the core of the APFS file system hierarchy. Together with extended fields and directory statistics, they provide efficient metadata access for both individual files and aggregate directory information.
 

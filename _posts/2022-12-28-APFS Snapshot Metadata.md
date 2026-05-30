@@ -82,7 +82,7 @@ typedef struct j_snap_name_val {
 
 ## Snapshot Extended Metadata Object
 
-Each snapshot has a _virtual_ _Snapshot Extended Metadata Object_ in the volume's _Object Map_.  The _virtual object identifier_ of this object is stored in the `apfs_snap_meta_ext_oid` field of the Volume Superblock.  There are multiple versions of this object whose _transaction identifiers_ correspond to each snapshot.
+Each snapshot has a _virtual_ _Snapshot Extended Metadata Object_ in the volume's _Object Map_. The _virtual object identifier_ of this object is stored in the `apfs_snap_meta_ext_oid` field of the Volume Superblock. There are multiple versions of this object whose _transaction identifiers_ correspond to each snapshot.
 
 ```cpp
 typedef struct snap_meta_ext_obj_phys {
@@ -105,5 +105,53 @@ typedef struct snap_meta_ext {
 - `sme_version`: The version of this structure (currently 1)
 - `sme_flags`: A bitfield of flags (none are currently defined)
 - `sme_snap_xid`: The transaction identifier of the snapshot
-- `sme_uuid`: The unique identifier of the snapshot
+- `sme_uuid`: The unique identifier of the snapshot. When extended metadata does not yet exist, the implementation synthesizes a default UUID by XOR-ing the first eight bytes of the volume's UUID with the snapshot's transaction identifier.
 - `sme_token`: An opaque token (_reserved_)
+
+## Snapshot Deletion
+
+Deleting a snapshot is a multi-step background process that merges physical extent records into an adjacent snapshot before removing the metadata:
+
+1. The snapshot is renamed to `com.apple.apfs.purgatory.<xid>` (where `<xid>` is the transaction identifier in hexadecimal) and a background _purgatory cleaner_ thread is woken.
+
+2. The purgatory cleaner locates the adjacent (next) snapshot and begins merging the source snapshot's _Extent Reference Tree_ into the destination's tree.
+
+3. During the merge, `SNAP_META_MERGE_IN_PROGRESS` is set on both source and destination snapshot metadata records. Extents are merged in batches (up to 2048 per transaction). If a transaction cannot allocate space for the full batch, the batch size is halved until it succeeds. The thread yields between batches to allow other work to proceed.
+
+4. The implementation compares the source and destination extentref tree key counts to choose the merge direction. If the destination tree is larger, it merges the source into the destination (forward merge). If the source tree is larger, it swaps roles so the smaller tree is merged into the larger, minimizing B-tree operations.
+
+5. After the merge completes, the source extentref tree is deleted, the snapshot metadata and name records are removed from the Snapshot Metadata Tree, and the [Object Map snapshot entry](/post/2022/12/12/APFS-OMAP) is deleted.
+
+If the merge is interrupted by a crash, `SNAP_META_MERGE_IN_PROGRESS` signals that it must resume on the next mount. Invalid entries (zero physical block, address exceeding device size) are logged and skipped rather than failing the entire merge.
+
+## Snapshot Revert
+
+Reverting a volume to a snapshot replaces the live file system state with the snapshot's state:
+
+1. If the volume is mounted read-only, the revert is deferred: `apfs_revert_to_xid` is set to the target snapshot's transaction identifier in the Volume Superblock, and the actual revert occurs on the next read-write mount.
+
+2. On read-write mount (or immediately if already read-write), the revert enters a transaction:
+   - The snapshot's Volume Superblock is copied over the current one.
+   - Physical extent state is reverted.
+   - The [Object Map is reverted](/post/2022/12/12/APFS-OMAP) via `omap_revert_to_snapshot`, which sets `om_pending_revert_min` and `om_pending_revert_max` to skip entries from the reverted range, effectively restoring the OMAP view to the target snapshot.
+   - All snapshots newer than the target are marked for deletion.
+   - The transaction is committed.
+
+3. After the revert, caches (integrity metadata, encryption state) are invalidated and rebuilt. The Reaper handles background cleanup of the deleted snapshot entries.
+
+The key insight is that the revert takes effect immediately through the OMAP's pending revert mechanism. Background cleanup proceeds asynchronously while the volume is already operating at the reverted state.
+
+## Dataless Snapshots
+
+A _dataless_ snapshot has had its physical extent data removed but retains its metadata and Volume Superblock backup. This preserves the snapshot timeline (for audit and restoration purposes) without consuming space for extent data.
+
+Making a snapshot dataless follows the same merge path as full deletion, except that metadata and name records are preserved afterward. The `SNAP_META_PENDING_DATALESS` flag is set, the purgatory cleaner merges the extentref tree into the adjacent snapshot, and upon completion `extentref_tree_oid` is set to zero and the flag is cleared.
+
+Constraints on making a snapshot dataless:
+- The volume must not be sealed (`APFS_INCOMPAT_SEALED_VOLUME` must not be set in the snapshot's superblock)
+- The live file system must not contain copy-on-write exempt files
+- The snapshot must not be currently mounted
+
+## Conclusion
+
+Snapshot metadata in APFS is distributed across multiple structures: the Snapshot Metadata Tree stores per-snapshot records and name mappings, the Snapshot Extended Metadata Object provides UUIDs and versioning, and the Extent Reference Trees track which physical extents each snapshot owns. Deletion and revert are multi-phase processes that leverage the Reaper and the Object Map's revert mechanism to maintain consistency across transactions.

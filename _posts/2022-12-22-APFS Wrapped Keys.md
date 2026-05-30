@@ -118,7 +118,47 @@ if vek_size == 16 {
 }
 ```
 
+## RFC 3394 Key Unwrapping
+
+Both KEK and VEK unwrapping use the [RFC 3394](https://www.rfc-editor.org/rfc/rfc3394) AES Key Wrap algorithm. This algorithm provides authenticated key transport: if the wrapping key is wrong or the wrapped data is corrupted, the unwrap will fail with a detectable integrity error.
+
+The algorithm operates on 64-bit blocks:
+1. The wrapped key is split into `n` 64-bit blocks. The first block is the _integrity check value_ (ICV) and the remaining blocks are the key material.
+2. Over 6 rounds (each iterating through all key blocks), the algorithm applies AES decryption with XOR operations that mix a round counter into the data.
+3. After all rounds, the ICV must equal `0xA6A6A6A6A6A6A6A6`. If it does not, the wrapping key was incorrect or the data is corrupted.
+
+The wrapped key is always 8 bytes longer than the unwrapped key (the ICV overhead). So a 256-bit (32-byte) key is stored as a 40-byte wrapped blob, and a 128-bit (16-byte) key as a 24-byte wrapped blob.
+
+## Per-File Encryption State
+
+On volumes with per-file encryption (not single-key mode), each file's encryption state is stored in a `wrapped_crypto_state_t` structure within `APFS_TYPE_CRYPTO_STATE` records in the [File System Tree](/post/2022/12/15/APFS-FSTrees):
+
+```cpp
+typedef struct wrapped_crypto_state {
+    uint16_t major_version;             // 0x00
+    uint16_t minor_version;             // 0x02
+    uint32_t cpflags;                   // 0x04
+    uint32_t persistent_class;          // 0x08
+    uint32_t key_os_version;            // 0x0C
+    uint16_t key_revision;              // 0x10
+    uint16_t key_len;                   // 0x12
+    uint8_t persistent_key[];           // 0x14
+} wrapped_crypto_state_t;
+```
+- `major_version`: Currently 5
+- `minor_version`: Currently 0
+- `cpflags`: Crypto flags (`CP_RAW_KEY_WRAPPEDKEY` = 0x01 indicates a SEP-wrapped hardware key)
+- `persistent_class`: The file's [protection class](/post/2022/12/21/APFS-Keybags) (1-7)
+- `key_os_version`: The OS version that created this key, packed as major/minor/build
+- `key_revision`: Key revision counter (incremented on re-wrap)
+- `key_len`: Length of the wrapped key data in bytes (max 128)
+- `persistent_key`: The RFC 3394-wrapped per-file key
+
+The `persistent_class` determines when the key is available for unwrapping (see [Protection Classes](/post/2022/12/21/APFS-Keybags)). The `key_os_version` is encoded as a packed integer: `(major << 24) | (minor << 16) | build`.
+
+On single-key volumes (`APFS_FS_ONEKEY`), per-file crypto state records do not exist. Instead, all files use the volume-level VEK with per-extent tweaks.
+
 ## Conclusion
 
-In this post, we discussed using the wrapped keys stored in APFS Keybags to gain access to the _Volume Encryption Key_ that protects a user's data in APFS. Tomorrow, we will conclude our discussion about APFS encryption by describing how to identify and decrypt protected information using these keys.
+In this post, we discussed using the wrapped keys stored in APFS Keybags to gain access to the _Volume Encryption Key_ that protects a user's data in APFS. The RFC 3394 algorithm provides authenticated unwrapping, while the `wrapped_crypto_state_t` structure enables per-file encryption with individual protection classes. In a the next post in this series, we will continue our discussion about APFS encryption by describing how to identify and decrypt protected information using these keys.
 

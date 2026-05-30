@@ -34,7 +34,9 @@ The object headers are immediately followed by type-specific data, and any remai
 
 ## Checksum
 
-The integrity of an on-disk APFS object's data can be verified by calculating a `Fletcher-64` checksum of all the object's data after the first 8 bytes.  This checksum can be compared with the value of the `o_cksum` field in the object's header.  If these values do not match, then the object is either only partially flushed to disk or is otherwise corrupted.  Note that like most uses of checksums, this is not a security feature, but is only used to detect unintentionally corrupted data.
+The integrity of an on-disk APFS object's data can be verified by calculating a `Fletcher-64` checksum of all the object's data after the first 8 bytes. This checksum can be compared with the value of the `o_cksum` field in the object's header. If these values do not match, then the object is either only partially flushed to disk or is otherwise corrupted. Note that like most uses of checksums, this is not a security feature, but is only used to detect unintentionally corrupted data.
+
+The checksum has an elegant verification property: when stored at the position of `o_cksum`, it causes the Fletcher-64 sums over the _entire_ block (including the checksum field) to equal zero. This means verification can be performed in a single pass without skipping the checksum field or comparing against a stored value.
 
 ```cpp
 uint64_t fletcher64(const void* data, size_t size) {
@@ -112,6 +114,13 @@ The following is a list of all currently-known object types and their identifier
 | ER_RECOVERY_BLOCK | 0x1c | Rolling Encryption Recovery State | `er_recovery_block_phys_t` |
 | SNAP_META_EXT | 0x1d | Additional Snapshot Metadata | `snap_meta_ext_obj_phys_t` |
 | INTEGRITY_META | 0x1e | Integrity Metadata | `integrity_meta_phys_t` |
+| FEXT_TREE | 0x1f | File Extent Tree Object | `btree_node_phys_t` |
+| PFKUR_TREE | 0x20 | Per-File Key Upgrade Rotation Tree | `btree_node_phys_t` |
+| EVICT_MAPPING_TREE | 0x21 | Evict Mapping Tree | `btree_node_phys_t` |
+| DOC_ID_TREE | 0x22 | Document Identifier Tree | `btree_node_phys_t` |
+| GRAFT_BLOCKMAP_LUT_TREE | 0x23 | Graft Blockmap LUT | `btree_node_phys_t` |
+| SECONDARY_FSROOT_TREE | 0x24 | Secondary FS Root Tree | `btree_node_phys_t` |
+| CLONEGROUP_TREE | 0x25 | Clonegroup Tree | `btree_node_phys_t` |
 
 There are three additional known object types that use all 32-bits of the `o_type` header field and do not contain type flags.
 
@@ -136,6 +145,12 @@ B-Tree objects also contain subtypes, which help identify the specific purpose o
 | FUSION_MIDDLE_TREE | 0x15 | Tracks Cached SSD Fusion Blocks | `fusion_mt_key_t` | `fusion_mt_val_t` |
 | GBITMAP_TREE | 0x1a | General Purpose Bitmap Tree | `uint64_t` | `uint64_t` |
 | FEXT_TREE | 0x1f | File Extents | `fext_tree_key_t` | `fext_tree_val_t` |
+| PFKUR_TREE | 0x20 | Per-File Key Upgrade Rotation | _variable_ | _variable_ |
+| EVICT_MAPPING_TREE | 0x21 | Evict Mapping | `evict_mapping_key_t` | `evict_mapping_val_t` |
+| DOC_ID_TREE | 0x22 | Document Identifier | `uint32_t` | `uint64_t` |
+| GRAFT_BLOCKMAP_LUT_TREE | 0x23 | Graft Blockmap LUT | _variable_ | _variable_ |
+| SECONDARY_FSROOT_TREE | 0x24 | Secondary FS Root | `j_key_t` | _variable_ |
+| CLONEGROUP_TREE | 0x25 | Clonegroup | `clonegroup_key_t` | `clonegroup_val_t` |
 
 ### Type Flags
 
@@ -158,4 +173,24 @@ The two _most-significant_ bits are used to denote the _kind_ of APFS object: vi
 If the `OBJ_NOHEADER` flag is set, then the object type in question does not start with an `obj_phys_t` header.  These types of objects are rare, and so far I've only seen it used for _space manager bitmap_ objects.  Note that these objects are different than the _headerless_ objects that are used in sealed volumes, which we will discuss in a future post.
 
 The `OBJ_ENCRYPTED` flag denotes an object that is always encrypted on disk, and the `OBJ_NONPERSISTENT` flag denotes an object that is never written to disk at all (this flag will only be set for ephemeral objects in memory that do not require persistence).
+
+When parsing type fields, the following masks separate the components:
+
+```cpp
+#define OBJECT_TYPE_MASK         0x0000ffff
+#define OBJECT_TYPE_FLAGS_MASK   0xffff0000
+#define OBJ_STORAGETYPE_MASK     0xc0000000
+```
+
+`OBJECT_TYPE_MASK` extracts the 16-bit type identifier. `OBJ_STORAGETYPE_MASK` extracts the two most-significant bits to determine the object kind (physical, virtual, or ephemeral).
+
+### Identifier Allocation Rules
+
+Object identifiers and transaction identifiers follow specific allocation rules:
+
+- New ephemeral and virtual objects are assigned monotonically increasing `oid` values from the container's `nx_next_oid` counter. The first 1024 identifiers (0 through 0x3FF) are reserved; `nx_next_oid` is initialized to 0x400 for new containers.
+- `OID_INVALID` (0) represents an invalid or unset object identifier.
+- `OID_NX_SUPERBLOCK` (1) is reserved for the container superblock.
+- Transaction identifiers (`xid`) are also monotonically increasing from `nx_next_xid`. A zero `xid` is invalid. Exhausting the 64-bit `xid` space is treated as an unrecoverable error.
+- When writing new objects, unused space within blocks must be zero-filled. This ensures that future format versions can safely add fields to existing structures without encountering garbage data.
 

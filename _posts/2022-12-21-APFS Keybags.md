@@ -80,14 +80,32 @@ typedef struct keybag_entry {
 Name | Value | Description
 -----|-------|------------
 KB_TAG_UNKNOWN | 0 | _reserved_ (never found on disk)
-KB_TAG_RESERVED_1 | 1 | _reserved_
+KB_TAG_MEDIA_KEY | 1 | The media keybag wrapping key (legacy; used in ramdisk/effaceable-storage configurations)
 KB_TAG_VOLUME_KEY | 2 | The key data stores a wrapped VEK
-KB_TAG_VOLUME_UNLOCK_RECORDS | 3 | In a container's keybag, the key data stores the location of the volumeʼs keybag; in a volume keybag, the key data stores a wrapped KEK.
+KB_TAG_VOLUME_UNLOCK_RECORDS | 3 | In a container's keybag, the key data stores the location of the volume's keybag; in a volume keybag, the key data stores a wrapped KEK.
 KB_TAG_VOLUME_PASSPHRASE_HINT | 4 | The key data stores a user's password hint as plain text
 KB_TAG_WRAPPING_M_KEY | 5 | The key data stores a key that's used to wrap a media key
 KB_TAG_VOLUME_M_KEY | 6 | The key data stores a key that's used to wrap volume media keys
-KB_TAG_RESERVED_F8 | 0xF | _reserved_
+KB_TAG_VOLUME_DEVICE_KEY | 7 | A class-based device wrapping key for hardware encryption configurations
+KB_TAG_RESERVED_F8 | 0xF8 | _reserved_
 
+When iterating keybag entries, each entry must be aligned to a 16-byte boundary. After reading `ke_keylen` bytes of `ke_keydata`, advance the pointer to the next 16-byte-aligned position before reading the next `keybag_entry_t`. Additionally, `ke_keylen` must be less than 512 bytes, and `kl_nbytes` must be at least 16 and must not exceed the keybag's total block size minus the header.
+
+### Protection Classes
+
+APFS supports multiple _protection classes_ that determine when encryption keys are available based on the device's lock state. These are primarily relevant on iOS but also apply to macOS volumes:
+
+{: style="margin-left: 0"}
+Class | Value | Availability
+------|-------|-------------
+A (Complete Protection) | 1 | Only when the device is unlocked
+B (Protected Unless Open) | 2 | Until the file is closed after first unlock
+C (Protected Until First User Authentication) | 3 | After first unlock until reboot (default)
+D (No Protection) | 4 | Always available
+F | 6 | Hardware-managed class
+G | 7 | Reserved
+
+Each file's protection class is stored in the `default_protection_class` field of its `j_inode_val_t` and in the `persistent_class` field of its `wrapped_crypto_state_t` record.
 
 ### Container Keybags
 

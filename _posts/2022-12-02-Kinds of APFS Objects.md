@@ -37,7 +37,17 @@ Of course, `CoW` comes at a cost.  There are some objects that need to be update
 
 Some objects require no persistence at all and are only resident in-memory.  Since we won't find those on disk, we don't need to be concerned with them at the moment.  Others spend the majority of their lifetimes in-memory when APFS is mounted and are only flushed to disk periodically (or when APFS is cleanly unmounted) for persistence.  These types of objects are known as _ephemeral_.
 
-Like virtual objects, ephemeral objects are not located at fixed locations on disk and there is no direct mapping between `oid` and storage blocks.  Ephemeral objects are "owned" by _checkpoint maps_, which are responsible for managing their on-disk lifetime and providing translation capabilities between `oid` and on-disk storage locations (more on these in the future).
+Like virtual objects, ephemeral objects are not located at fixed locations on disk and there is no direct mapping between `oid` and storage blocks. Ephemeral objects are "owned" by _checkpoint maps_, which are responsible for managing their on-disk lifetime and providing translation capabilities between `oid` and on-disk storage locations (more on these in the future). Specifically, each checkpoint map entry stores the ephemeral object's `oid`, type, subtype, size, and the physical block address where the object was written in the _checkpoint data area_.
 
-Given that we have limited guarantees about when and how often these objects are flushed to disk, ephemeral objects are limited to only those that are not critical to preserving the integrity of users' data, and that can be reconstructed entirely (or from previous versions) on-demand.  Still, ephemeral objects play an important role in APFS.  We will discuss several of the kinds of objects throughout this series.
+Given that we have limited guarantees about when and how often these objects are flushed to disk, ephemeral objects are limited to only those that are not critical to preserving the integrity of users' data, and that can be reconstructed entirely (or from previous versions) on-demand. Still, ephemeral objects play an important role in APFS. We will discuss several of the kinds of objects throughout this series.
+
+## Copy-on-Write Universality
+
+Regardless of storage method, APFS objects on disk are never modified in place. When an object is modified, the updated copy is always written to a new location. For physical objects, this means the modified copy receives a new `oid` (since the `oid` is the block address). For virtual objects, the modified copy retains the same `oid` but gets a new `xid`, and the object map is updated to point to the new physical location. For ephemeral objects, the modified copy is written to a new position in the checkpoint data area on the next checkpoint flush.
+
+This universal copy-on-write guarantee is what makes APFS crash-safe without needing a traditional journal: if a crash occurs mid-write, the previous version of every object remains intact at its original location.
+
+## Identifier Uniqueness
+
+Object identifiers are unique within a container for each storage method. This means that a virtual object and a physical object can share the same numeric identifier without conflict, because they are located through different mechanisms (object map lookup vs. direct block addressing). When you encounter an object identifier, you must know its storage method (from context) to resolve it correctly.
 

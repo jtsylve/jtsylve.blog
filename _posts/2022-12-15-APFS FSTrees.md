@@ -39,6 +39,23 @@ typedef struct j_key {
 
 Keys are ordered first by an _object identifier_ and then by _type_. A File System Object’s records will be stored together sequentially. Search the FS-Tree for the first record with a given identifier and then enumerate subsequent records until reaching one with a different ID.
 
+### Reserved Inode Numbers
+
+Several inode numbers are reserved for special purposes:
+
+{: style="margin-left: 0"}
+Name | Value | Description
+-----|-------|------------
+INVALID_INO_NUM | 0 | Invalid (no inode)
+ROOT_DIR_PARENT | 1 | Sentinel parent ID for the root directory (not an actual inode)
+ROOT_DIR_INO_NUM | 2 | The volume’s root directory
+PRIV_DIR_INO_NUM | 3 | The private directory (`private-dir`), used for implementation-specific bookkeeping
+SNAP_DIR_INO_NUM | 6 | Snapshot metadata directory
+PURGEABLE_DIR_INO_NUM | 7 | Purgeable file references (reserved, no actual directory)
+MIN_USER_INO_NUM | 16 | First inode number available for user content
+
+All inode numbers below 16 are reserved. On system volumes in a volume group, these same numbers are offset by `UNIFIED_ID_SPACE_MARK` (`0x0800000000000000`).
+
 ## File System Record Types
 
 Below is a table of the documented File System Record Types.  We will discuss the on-disk format of each record type soon.
@@ -59,6 +76,37 @@ APFS_TYPE_DIR_STATS | 10 | Information about a directory
 APFS_TYPE_SNAP_NAME | 11 | The name of a snapshot
 APFS_TYPE_SIBLING_MAP | 12 | A mapping from a hard link to its target inode
 APFS_TYPE_FILE_INFO | 13 | Additional information about file data
+
+On volumes with the `APFS_INCOMPAT_EXPANDED_RECORDS` flag set, the type value `APFS_TYPE_EXPANDED` (14) serves as a marker. When this type is set in `j_key_t`, the actual record subtype is stored in a separate byte at key offset +8. Known expanded subtypes:
+
+{: style="margin-left: 0"}
+Subtype | Description
+--------|------------
+16 | Purgeable file tracking
+17 | Tombstone records for deleted entries
+18 | Expanded directory statistics
+19 | Clone mapping records for file cloning
+
+## Key Encoding Details
+
+The `obj_id_and_type` field in `j_key_t` packs both the object identifier and type into a single 64-bit value. The `SYSTEM_OBJ_ID_MARK` flag (0x0800000000000000) can be set on the object identifier to distinguish system objects from user objects in volume-group configurations.
+
+When sorting FS-Tree records, the comparison proceeds in three stages:
+
+1. Compare object identifiers (lower 60 bits of `obj_id_and_type`) numerically.
+2. Compare types (upper 4 bits) numerically. This groups all record types for a single file system object together.
+3. For directory records and extended attributes, compare the remaining key data. For `j_drec_hashed_key_t`, compare `name_len_and_hash` numerically first, then name bytes. For `j_xattr_key_t`, compare name bytes directly.
+
+This ordering ensures that all records for a single file system object (inode, directory entries, extents, xattrs, siblings) are stored adjacently in the tree, making it efficient to gather all information about a file in a single range scan.
+
+## File System Object Composition
+
+Different file system objects are composed of different record types. Here are the common compositions:
+
+- **Files:** `INODE` (required), plus optional `CRYPTO_STATE`, `DSTREAM_ID`, `EXTENT`, `FILE_EXTENT`, `SIBLING_LINK`, and `XATTR` records
+- **Directories:** `INODE` (required), plus `DIR_REC` for each child, optional `DIR_STATS`, `CRYPTO_STATE`, and `XATTR`
+- **Symbolic links:** `INODE` (required), plus an `XATTR` with the name `com.apple.fs.symlink` whose value is the target path
+- **Snapshots:** `SNAP_METADATA` (required) and `SNAP_NAME` (required), plus optional `CRYPTO_STATE` and `EXTENT`
 
 ## Conclusion
 

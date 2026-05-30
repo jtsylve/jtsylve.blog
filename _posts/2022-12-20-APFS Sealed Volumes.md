@@ -44,13 +44,19 @@ APFS_SEAL_BROKEN | 0x00000001 | The volume was modified after being sealed, brea
 #### Hash Types
 
 {: style="margin-left: 0"}
-Name | Value | Description
------|-------|------------
-APFS_HASH_INVALID | 0 | An invalid hash algorithm
-APFS_HASH_SHA256 | 0x1 |  The SHA-256 variant of Secure Hash Algorithm 2
-APFS_HASH_SHA512_256 | 0x2 | The SHA-512/256 variant of Secure Hash Algorithm 2
-APFS_HASH_SHA384 | 0x3 | The SHA-384 variant of Secure Hash Algorithm 2
-APFS_HASH_SHA512 | 0x4 | The SHA-512 variant of Secure Hash Algorithm 2
+Name | Value | Digest Size | Description
+-----|-------|-------------|------------
+APFS_HASH_INVALID | 0 | n/a | An invalid hash algorithm
+APFS_HASH_SHA256 | 0x1 | 32 bytes | SHA-256 (default)
+APFS_HASH_SHA512_256 (deprecated) | 0x2 | 32 bytes | SHA-512/256 (deprecated; use type 0x5 instead)
+APFS_HASH_SHA384 | 0x3 | 48 bytes | SHA-384
+APFS_HASH_SHA512 | 0x4 | 64 bytes | SHA-512
+APFS_HASH_SHA512_256 | 0x5 | 32 bytes | SHA-512/256 (replacement for deprecated type 0x2)
+APFS_HASH_SHA3_256 | 0x6 | 32 bytes | SHA3-256
+APFS_HASH_SHA3_384 | 0x7 | 48 bytes | SHA3-384
+APFS_HASH_SHA3_512 | 0x8 | 64 bytes | SHA3-512
+
+Hash type 0x2 (`SHA512_256`) is deprecated and rejected during validation. The validation check `(hash_type & 0xFD) != 0` rejects both type 0 (invalid) and type 2 (deprecated).
 
 ## File System Tree
 
@@ -95,7 +101,63 @@ typedef struct fext_tree_val {
 - `len_and_flags`: A bit field that contains the length of the extent and its flags
 - `phys_block_num`: The starting physical block address of the extent
 
+## Root Hash Verification
+
+At mount time, the sealed volume's integrity is verified by comparing the on-disk root hash against a known-good value supplied by the boot chain:
+
+1. The system checks whether root hash authentication is required based on the volume role and system configuration.
+2. If the seal is broken (`APFS_SEAL_BROKEN` is set in `im_flags`), the mount is rejected with `EAUTH` (error 80) when authentication is required.
+3. The root hash payload contains block-size-specific root hashes. The appropriate hash is selected based on the device's block size: 4 KiB blocks use offset +16, 8 KiB blocks use offset +80, and 16 KiB blocks use offset +144.
+4. The selected hash is compared against the on-disk root hash stored at `im_root_hash_offset` within the integrity metadata object. This offset must be at least 0x30 (48 bytes) and is typically set to 0x80 (128 bytes).
+5. If the hashes match, the volume is verified. If they do not match and authentication is required, the system boots to recovery mode.
+
+Because the hashed B-Tree functions as a Merkle tree, the root hash transitively verifies every node in the File System Tree. Modifying any leaf node changes its hash, which propagates up through every ancestor node to the root.
+
+## Seal Breaking
+
+When a sealed volume is modified (for example, during a system update), the seal is broken:
+
+1. `APFS_SEAL_BROKEN` (bit 0) is set in `im_flags`.
+2. If `im_version` is 2 or above, the current transaction identifier is stored in `im_broken_xid`.
+3. The volume's verification flag is cleared.
+
+To restore a broken seal, the implementation verifies that `im_version >= 2` and that the file system root tree has not been modified since the seal was broken (the root tree's maximum transaction identifier must be less than `im_broken_xid`). If both conditions hold, `APFS_SEAL_BROKEN` is cleared and `im_broken_xid` is zeroed.
+
+## File Info Records
+
+Sealed volumes also use _file info records_ (type `APFS_TYPE_FILE_INFO`) to store per-extent data hashes and attribution tags. These records enable verification of individual file data blocks without re-hashing the entire tree.
+
+```cpp
+typedef struct j_file_info_key {
+    j_key_t hdr;           // 0x00
+    uint64_t info_and_lba; // 0x08
+} j_file_info_key_t;       // 0x10
+```
+- `hdr`: The record's header (type `APFS_TYPE_FILE_INFO`)
+- `info_and_lba`: The physical block address (lower 56 bits) and record type (upper 8 bits)
+
+Two record types exist:
+
+{: style="margin-left: 0"}
+Name | Value | Description
+-----|-------|------------
+APFS_FILE_INFO_DATA_HASH | 1 | A hash of the file's data at a specific extent
+APFS_FILE_INFO_ATTRIBUTION_TAG | 2 | A code-signing attribution tag
+
+Data hash values store the hash of a segment of file data:
+
+```cpp
+typedef struct j_file_data_hash_val {
+    uint16_t hashed_len; // 0x00
+    uint8_t hash_size;   // 0x02
+    uint8_t hash[];      // 0x03
+} j_file_data_hash_val_t;
+```
+- `hashed_len`: The length of the hashed data segment, in blocks
+- `hash_size`: The length of the hash in bytes (must match the digest size for `im_hash_type`)
+- `hash`: The hash data
+
 ## Conclusion
 
-Sealed Volumes in APFS provide an extra layer of security by allowing macOS to verify its system volume cryptographically. This post described some of the subtle differences in analyzing sealed volumes.
+Sealed Volumes in APFS provide an extra layer of security by allowing macOS to verify its system volume cryptographically. The Merkle-tree-like hashed B-Tree structure, combined with root hash verification at mount time and per-extent data hashes, ensures that any modification to the system volume is detectable. Understanding seal breaking, hash verification, and the additional file info records is essential for analyzing sealed system volumes.
 

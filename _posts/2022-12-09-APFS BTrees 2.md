@@ -29,14 +29,27 @@ The table of contents is an array of either type `kvoff_t` (for fixed-size k/v p
 
 _NOTE: B-Trees with the `BTREE_ALLOW_GHOSTS` flag can sparsely populate values.  The value 0xFFFF stored in the offset field of an entry in the table of contents indicates that there is no associated value for a given key stored in the node._
 
-Leaf nodes give direct access to values, so no further effort is required in these cases. For non-leaf nodes, the stored value can be interpreted as an object identifier. The btree info may contain either the `BTREE_EPHEMERAL` or `BTREE_PHYSICAL` flags or neither. This indicates whether non-root nodes are _physical_, _ephemeral_, or _virtual objects_. Physical nodes can be directly addressed by their object identifiers. Ephemeral nodes need to be looked up using [Checkpoint Maps](/post/2022/12/07/APFS-Checkpoint-Maps). Virtual nodes require querying Object Maps (discussed in the next post). In all cases, locate each child node using the appropriate method and continue the enumeration process.
+Leaf nodes give direct access to values, so no further effort is required in these cases. For non-leaf nodes, the stored value is interpreted differently depending on whether the tree is hashed:
+
+- **Standard (non-hashed) trees:** The value is a plain object identifier (`oid_t`) pointing to the child node.
+- **Hashed trees** (used by [sealed volumes](/post/2022/12/20/APFS-Sealed-Volumes)): The value is a `btn_index_node_val_t` structure containing both the child's object identifier and a cryptographic hash of the child node's contents. During traversal of hashed trees, verify that the child's computed hash matches the stored hash to detect corruption or tampering.
+
+The btree info may contain either the `BTREE_EPHEMERAL` or `BTREE_PHYSICAL` flags or neither. This indicates whether non-root nodes are _physical_, _ephemeral_, or _virtual objects_. Physical nodes can be directly addressed by their object identifiers. Ephemeral nodes need to be looked up using [Checkpoint Maps](/post/2022/12/07/APFS-Checkpoint-Maps). Virtual nodes require querying Object Maps (discussed in the next post). In all cases, locate each child node using the appropriate method and continue the enumeration process.
 
 ## Faster Lookups of Specific Values
 
 We could use enumeration to look up a value by its key as with Checkpoint Maps, but that would require _linear time_. We can use the copies of the key information stored in non-leaf nodes for much faster _logarithmic-time_ lookups. When analyzing a non-leaf node, identify the key closest to, but not ordered after, the desired key. We can then continue the search by analyzing a specific child node without enumerating the rest of the node’s children. Because APFS B-Tree Nodes are optimized for minimal depth, we can identify a particular k/v pair with minimal enumeration.
 
+## Headerless Nodes
+
+Nodes in trees with the `BTREE_NOHEADER` flag have their 32-byte `obj_phys_t` header zeroed out. This is used in hashed trees (sealed volumes) where the header bytes would interfere with hash computation. When parsing these nodes, skip the header validation (checksum, type, oid) and rely instead on the parent node's stored hash for integrity verification.
+
+## Sequential Insert Optimization
+
+Trees with the `BTREE_SEQUENTIAL_INSERT` flag maintain a pointer to the last leaf node, enabling a fast path for sequential insertions. When a new key is greater than all existing keys, the insertion targets the last leaf directly rather than traversing from the root. This is common for extent trees and free queues where keys (addresses or transaction IDs) tend to increase monotonically.
+
 ## Conclusion
 
-Understanding the structure and traversal of APFS B-Trees is essential for effectively parsing information from this file system. We discussed methods for enumerating all values in linear time and performing faster logarithmic-time lookups of specific values.
+Understanding the structure and traversal of APFS B-Trees is essential for effectively parsing information from this file system. We discussed methods for enumerating all values in linear time, performing faster logarithmic-time lookups, and the differences between standard and hashed tree traversal.
 
-B-Trees are used in many ways in APFS.  In the next post, we will discuss _Object Map_ B-Trees and how they can be used to access virtual objects.
+B-Trees are used in many ways in APFS. In the next post, we will discuss _Object Map_ B-Trees and how they can be used to access virtual objects.

@@ -76,9 +76,19 @@ typedef struct apfs_superblock {
     oid_t apfs_integrity_meta_oid;                      // 0x400
     oid_t apfs_fext_tree_oid;                           // 0x408
     uint32_t apfs_fext_tree_type;                       // 0x410
-    uint32_t reserved_type;                             // 0x414
-    oid_t reserved_oid;                                 // 0x418
-} apfs_superblock_t;                                    // 0x420
+    uint32_t apfs_pfkur_tree_type;                      // 0x414
+    oid_t apfs_pfkur_tree_oid;                          // 0x418
+    uint64_t apfs_doc_id_index_xid;                     // 0x420
+    uint32_t apfs_doc_id_index_flags;                   // 0x428
+    uint32_t apfs_doc_id_tree_type;                     // 0x42C
+    oid_t apfs_doc_id_tree_oid;                         // 0x430
+    oid_t apfs_doc_id_tree_snap_oid;                    // 0x438
+    uint64_t apfs_doc_id_fixup_cursor;                  // 0x440
+    oid_t apfs_secondary_fsroot_tree_oid;               // 0x448
+    uint32_t apfs_secondary_fsroot_tree_type;           // 0x450
+    uint32_t apfs_clonegroup_flags;                     // 0x454
+    oid_t apfs_clonegroup_tree_oid;                     // 0x458
+} apfs_superblock_t;
 ```
 
 - `apfs_o`: The object header
@@ -125,10 +135,20 @@ typedef struct apfs_superblock {
 - `apfs_snap_meta_ext_oid`: The virtual object identifier of the extended snapshot metadata object
 - `apfs_volume_group_id`: The volume group the volume belongs to (or null UUID if not part of a volume group)
 - `apfs_integrity_meta_oid`: The virtual object identifier of the integrity metadata object
-- `apfs_fext_tree_oid`: The virtual object identifier of the file extent tree
+- `apfs_fext_tree_oid`: The virtual object identifier of the file extent tree (sealed volumes)
 - `apfs_fext_tree_type`: The type of the file extent tree
-- `reserved_type`: _reserved_
-- `reserved_oid`: _reserved_
+- `apfs_pfkur_tree_type`: The type of the per-file key upgrade rotation tree
+- `apfs_pfkur_tree_oid`: The object identifier of the PFKUR tree (tracks background key re-encryption progress)
+- `apfs_doc_id_index_xid`: Transaction identifier of the document identifier index (validated at mount)
+- `apfs_doc_id_index_flags`: Document identifier index flags (bit 1 = needs rebuild)
+- `apfs_doc_id_tree_type`: The type of the document identifier tree
+- `apfs_doc_id_tree_oid`: The object identifier of the document identifier tree
+- `apfs_doc_id_tree_snap_oid`: The object identifier of the document identifier snapshot tree
+- `apfs_doc_id_fixup_cursor`: Progress cursor for document ID fixup operations
+- `apfs_secondary_fsroot_tree_oid`: The object identifier of the secondary file-system root tree (used with `APFS_INCOMPAT_SECONDARY_FSROOT`)
+- `apfs_secondary_fsroot_tree_type`: The type of the secondary root tree
+- `apfs_clonegroup_flags`: Clone group configuration flags (bit 0 enables clone group tracking)
+- `apfs_clonegroup_tree_oid`: The object identifier of the clone group tree
 
 #### Optional Feature Flags
 
@@ -137,11 +157,11 @@ _Optional Feature Flags_ indicate that the volume uses newer features that older
 {: style="margin-left: 0"}
 Name | Value | Description
 ---- | ----- | -----------
-APFS_FEATURE_DEFRAG_PRERELEASE | 0x00000001 | _reserved_
-APFS_FEATURE_HARDLINK_MAP_RECORDS | 0x00000002 | The volume has hardlink map records
+APFS_FEATURE_DEFRAG_PRERELEASE | 0x00000001 | The volume uses a prerelease defragmentation implementation (legacy, superseded by DEFRAG)
+APFS_FEATURE_HARDLINK_MAP_RECORDS | 0x00000002 | The volume has sibling map records for hard links (always set at creation)
 APFS_FEATURE_DEFRAG | 0x00000004 | The volume supports defragmentation
-APFS_FEATURE_STRICTATIME | 0x00000008 | This volume updates file access times every time the file is read
-APFS_FEATURE_VOLGRP_SYSTEM_INO_SPACE | 0x00000010 | This volume supports mounting a system and data volume as a single user-visible volume
+APFS_FEATURE_STRICTATIME | 0x00000008 | Strict access time tracking is enabled
+APFS_FEATURE_VOLGRP_SYSTEM_INO_SPACE | 0x00000010 | This volume supports the merged system/data inode namespace for volume groups
 
 #### Incompatible Volume Feature Flags
 
@@ -151,12 +171,15 @@ _Incompatible Volume Feature Flags_ indicate that the volume uses newer features
 Name | Value | Description
 ---- | ----- | -----------
 APFS_INCOMPAT_CASE_INSENSITIVE | 0x00000001 | Filenames on this volume are case insensitive
-APFS_INCOMPAT_DATALESS_SNAPS | 0x00000002 | At least one snapshot with no data exists for this volume
-APFS_INCOMPAT_ENC_ROLLED | 0x00000004 | This volumeʼs encryption has changed keys at least once
-APFS_INCOMPAT_NORMALIZATION_INSENSITIVE | 0x00000008 | Filenames on this volume are normalization insensitive
-APFS_INCOMPAT_INCOMPLETE_RESTORE | 0x00000010 | This volume is being restored, or a restore operation to this volume was uncleanly aborted
-APFS_INCOMPAT_SEALED_VOLUME | 0x00000020 | This volume can't be modified
-APFS_INCOMPAT_RESERVED_40 | 0x00000040 | _reserved_
+APFS_INCOMPAT_DATALESS_SNAPS | 0x00000002 | At least one dataless snapshot exists for this volume
+APFS_INCOMPAT_ENC_ROLLED | 0x00000004 | This volume's encryption keys have been rolled (rotated)
+APFS_INCOMPAT_NORMALIZATION_INSENSITIVE | 0x00000008 | Filenames on this volume use normalization-insensitive comparison
+APFS_INCOMPAT_INCOMPLETE_RESTORE | 0x00000010 | A volume restore did not complete (volume cannot be mounted)
+APFS_INCOMPAT_SEALED_VOLUME | 0x00000020 | The volume is sealed and cannot be modified unless the seal is broken
+APFS_INCOMPAT_PFK_UPGRADE_ROTATION | 0x00000040 | The volume supports per-file key upgrade/rotation (has a PFKUR tree)
+APFS_INCOMPAT_ALLOCATED_UNWRITTEN | 0x00000080 | The volume supports allocated-but-unwritten file extents
+APFS_INCOMPAT_SECONDARY_FSROOT | 0x00000100 | The volume has a secondary file-system root tree
+APFS_INCOMPAT_EXPANDED_RECORDS | 0x00000200 | The volume uses expanded record types (purgeable, tombstone, clone mapping)
 
 #### Volume Flags
 
@@ -166,14 +189,17 @@ _Volume Flags_ are used to indicate additional information about the volume's st
 Name | Value | Description
 ---- | ----- | -----------
 APFS_FS_UNENCRYPTED | 0x00000001 | The volume is not encrypted
-APFS_FS_RESERVED_2 | 0x00000002 | _reserved_
-APFS_FS_RESERVED_4 | 0x00000004 | _reserved_
-APFS_FS_ONEKEY | 0x00000008 | Files on the volume are all encrypted using the volume encryption key (VEK)
-APFS_FS_SPILLEDOVER | 0x00000010 | The volume has run out of allocated space on the solid-state drive
-APFS_FS_RUN_SPILLOVER_CLEANER | 0x00000020 | The volume has spilled over and the spillover cleaner must be run
-APFS_FS_ALWAYS_CHECK_EXTENTREF | 0x00000040 | The volume's extent reference tree is always consulted when deciding whether to overwrite an extent
+APFS_FS_SIBLING_MAP_FIXUP_DONE | 0x00000002 | Sibling map fixup has been performed (does not control the fixup itself)
+APFS_FS_PREVIOUSLY_LOCKED | 0x00000004 | The volume was previously locked (encryption was active)
+APFS_FS_ONEKEY | 0x00000008 | Files are encrypted with a single volume encryption key (VEK)
+APFS_FS_SPILLEDOVER | 0x00000010 | The volume's allocation has exceeded its reserved space
+APFS_FS_RUN_SPILLOVER_CLEANER | 0x00000020 | The volume should reclaim blocks beyond its reservation
+APFS_FS_ALWAYS_CHECK_EXTENTREF | 0x00000040 | The extent reference tree must be consulted before overwriting any extent
 APFS_FS_RESERVED_80 | 0x00000080 | _reserved_
-APFS_FS_RESERVED_100 | 0x00000100 | _reserved_
+APFS_FS_SCALEABLE_PFK | 0x00000100 | Files are encrypted with scalable per-file keys
+APFS_FS_RESERVED_200 | 0x00000200 | _reserved_
+APFS_FS_PENDING_OFFLINE_PURGE_CLEANUP | 0x00000400 | An offline purge was performed; cleanup needed on next mount
+APFS_FS_ATTRIBUTION_TAGS_ENABLED | 0x00000800 | Attribution tag tracking is enabled on this volume
 
 #### Volume Roles
 
@@ -183,23 +209,24 @@ In most instances, an APFS Volume is marked as having a defined _role_. The pres
 Name | Value | Description
 ---- | ----- | -----------
 APFS_VOL_ROLE_NONE | 0x0000 | The volume has no defined role
-APFS_VOL_ROLE_SYSTEM | 0x0001 | The volume contains a root directory for the system
+APFS_VOL_ROLE_SYSTEM | 0x0001 | The volume contains the system root directory
 APFS_VOL_ROLE_USER | 0x0002 | The volume contains users' home directories
 APFS_VOL_ROLE_RECOVERY | 0x0004 | The volume contains a recovery system
 APFS_VOL_ROLE_VM | 0x0008 | The volume is used as swap space for virtual memory
 APFS_VOL_ROLE_PREBOOT | 0x0010 | The volume contains files needed to boot from an encrypted volume
 APFS_VOL_ROLE_INSTALLER | 0x0020 | The volume is used by the OS installer
-APFS_VOL_ROLE_DATA | 0x0040 | The volume contains mutable data
-APFS_VOL_ROLE_BASEBAND | 0x0080 | The volume is used by the radio firmware
-APFS_VOL_ROLE_UPDATE | 0x00C0 | The volume is used by the software update mechanism
-APFS_VOL_ROLE_XART | 0x0100 | The volume is used to manage OS access to secure user data
-APFS_VOL_ROLE_HARDWARE | 0x0140 | The volume is used for firmware data
-APFS_VOL_ROLE_BACKUP | 0x0180 | The volume is used by Time Machine to store backups
-APFS_VOL_ROLE_RESERVED_7 | 0x01C0 | _reserved_
-APFS_VOL_ROLE_RESERVED_8 | 0x0200 | _reserved_
-APFS_VOL_ROLE_ENTERPRISE | 0x0240 | This volume is used to store enterprise-managed data
-APFS_VOL_ROLE_RESERVED_10 | 0x0280 | _reserved_
-APFS_VOL_ROLE_PRELOGIN | 0x02C0 | This volume is used to store system data used before login
+APFS_VOL_ROLE_DATA | 0x0040 | The volume contains mutable user data (paired with System in a volume group)
+APFS_VOL_ROLE_BASEBAND | 0x0080 | The volume stores baseband firmware (iOS only)
+APFS_VOL_ROLE_UPDATE | 0x00C0 | The volume is used for software updates
+APFS_VOL_ROLE_XART | 0x0100 | The volume stores xART (anti-replay technology) data
+APFS_VOL_ROLE_HARDWARE | 0x0140 | The volume contains hardware-specific data
+APFS_VOL_ROLE_BACKUP | 0x0180 | The volume is used by Time Machine for backups
+APFS_VOL_ROLE_SIDE_CAR | 0x01C0 | The volume stores sidecar data
+APFS_VOL_ROLE_INTERNAL | 0x0200 | The volume is for internal use
+APFS_VOL_ROLE_ENTERPRISE | 0x0240 | The volume stores enterprise-managed data
+APFS_VOL_ROLE_IDIAGS | 0x0280 | The volume is used for internal diagnostics
+APFS_VOL_ROLE_OVER_PROVISION | 0x02C0 | The volume is used for over-provisioning (mounted read-only)
+APFS_VOL_ROLE_CACHE | 0x0300 | The volume stores cached data (requires encryption and SEP)
 
 #### apfs_modified_by_t
 
@@ -223,7 +250,21 @@ typedef struct apfs_modified_by {
 - `timestamp`: The time that the program last modified this volume
 - `last_xid`: The transaction identifier of the last transaction committed by this program
 
+## Document Identifier Tree
+
+APFS tracks files across operations that change their inode numbers (such as atomic safe-saves performed by macOS applications). Each file is assigned a _document identifier_, a stable integer stored in the `INO_EXT_TYPE_DOCUMENT_ID` extended field of its inode. Document identifiers are allocated sequentially from the `apfs_next_doc_id` field of the Volume Superblock, which is initialized to 3 at volume creation.
+
+The _Document Identifier Tree_ (`apfs_doc_id_tree_oid`) is a B-Tree that maps document identifiers to their current inode numbers. This allows the system to locate a file by its stable document identifier even after it has been renamed, moved, or replaced through an atomic save operation. The tree is validated and potentially rebuilt at mount time by comparing `apfs_doc_id_index_xid` against the current checkpoint transaction identifier.
+
+## Volume Groups
+
+On modern macOS systems (10.15+), the system uses a _volume group_ consisting of paired System and Data volumes. The system volume is sealed and read-only, while the data volume stores all user-modifiable content. The two are linked by a shared `apfs_volume_group_id` UUID. Firmlinks stitch selected paths from the Data volume into the System volume's namespace, creating a unified directory tree.
+
+To prevent inode number collisions between paired volumes, the object identifier space is partitioned: Data volumes allocate identifiers starting at `0x10` and must not exceed `0x0FFFFFFF0000000F`, while System volumes allocate from `0x0FFFFFFF00000010` upward. This allows both volumes to share a merged namespace without coordination.
+
+The role encoding uses two ranges: values `0x01` through `0x20` are individual bit flags in the lower 6 bits, while values at `0x40` and above are enumerated values shifted left by 6 bits (`APFS_VOLUME_ENUM_SHIFT`). This is why `APFS_VOL_ROLE_DATA` is `1 << 6` = `0x40`, `APFS_VOL_ROLE_BASEBAND` is `2 << 6` = `0x80`, and so on.
+
 ## Conclusion
 
-Locating and analyzing Volume Superblocks are essential early steps in being able to parse the contents of their file systems.  Our next post will discuss the volume’s File System Tree, a specialized B-Tree that stores the bulk of the file systems’ metadata objects.
+Locating and analyzing Volume Superblocks are essential early steps in being able to parse the contents of their file systems. The Volume Superblock provides access to all volume-level trees, encryption state, and role information. Our next post will discuss the volume’s File System Tree, a specialized B-Tree that stores the bulk of the file systems’ metadata objects.
 

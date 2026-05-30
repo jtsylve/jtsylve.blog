@@ -66,7 +66,8 @@ typedef struct nx_superblock {
     prange_t nx_fusion_wbc;                         // 0x650
     uint64_t nx_newest_mounted_version;             // 0x660
     prange_t nx_mkb_locker;                         // 0x668
-} nx_superblock_t;                                  // 0x678
+    xid_t nx_xp_pending_xid;                        // 0x678
+} nx_superblock_t;                                  // 0x680
 ```
 
 ### prange_t
@@ -117,8 +118,9 @@ typedef struct nx_superblock {
 - `nx_fusion_mt_oid`: The physical object identifier of the _Fusion Middle Tree_ or zero on non-fusion drives
 - `nx_fusion_wbc_oid`: The ephemeral object identifier of the Fusion write-back cache state or zero on non-fusion drives
 - `nx_fusion_wbc`: The blocks used for the Fusion _write-back cache area_, or zero for non-Fusion drives
-- `nx_newest_mounted_version`: _Reserved_, but generally used to encode the version number of the APFS KEXT with the highest version number that was used to mount this container read/write.
-- `nx_mkb_locker`: The blocks used to store the wrapped media key
+- `nx_newest_mounted_version`: The highest APFS implementation version that has ever mounted this container (encoded as packed decimal: `major * 10^12 + minor * 10^9 + patch * 10^6 + micro * 10^3 + build`)
+- `nx_mkb_locker`: The blocks used for the media key bag locker
+- `nx_xp_pending_xid`: The starting transaction identifier for temporary checkpoints during a multi-transaction upgrade, or zero when no upgrade is in progress
 
 
 
@@ -160,7 +162,19 @@ As discussed in our [last post](/post/2022/12/05/APFS-Containers), the container
 
 Search each range of blocks in the descriptor area, looking for NX Superblock objects.  There should be more than one, with each superblock representing a specific checkpoint.  Validate each superblock as before, and keep track of the _valid_ superblock with the highest _transaction identifier_ (`xid`).  Since NX Superblock objects are the last objects flushed to disk during a checkpoint transaction, this _should_ mean you've located the information needed to parse the most up-to-date state of the container.  If you run into problems parsing information from a container later down the road, you can always try starting from the NX Superblock with the next-highest `xid`.
 
+## Checkpoint Transaction Sequencing
+
+The checkpoint descriptor and data areas operate as circular buffers (ring buffers). Understanding how APFS sequences transactions within these areas is critical for forensic analysis and recovery.
+
+The `nx_xp_desc_index` and `nx_xp_desc_len` fields define the _valid window_ within the descriptor area for the current checkpoint. The index points to the first block of the checkpoint (the first checkpoint mapping block), and `len` gives the total number of blocks used (mapping blocks plus the superblock itself, which is always the last block). The superblock is located at index `(nx_xp_desc_index + nx_xp_desc_len - 1) % desc_blocks`.
+
+Similarly, `nx_xp_data_index` and `nx_xp_data_len` define the valid window in the data area. The `_next` fields (`nx_xp_desc_next` and `nx_xp_data_next`) indicate where the next checkpoint will begin writing.
+
+When validating a candidate superblock during the full scan, an important consistency check is that the superblock's self-reported position (computed from its `nx_xp_desc_index` and `nx_xp_desc_len`) matches the index at which it was actually found. A mismatch indicates corruption or a partially-written checkpoint. Additionally, `nx_xp_desc_len` must not exceed the number of unscanned blocks remaining in the descriptor area.
+
+For forensic analysis, the ring buffer nature of checkpoint areas means that older checkpoints are progressively overwritten by newer ones. The number of recoverable historical states depends on the size of the descriptor area (typically 8 to 4096 blocks) and how many blocks each checkpoint consumes.
+
 ## Conclusion
 
-Understanding how to interpret and locate _NX Superblock Objects_ is the first step in parsing APFS.  These objects are essential to the process of locating all other objects in a checkpoint.  In our next post, we will discuss _Checkpoint Maps_, and how they can be used to locate ephemeral objects on disk.
+Understanding how to interpret and locate _NX Superblock Objects_ is the first step in parsing APFS. These objects are essential to the process of locating all other objects in a checkpoint. In our next post, we will discuss _Checkpoint Maps_, and how they can be used to locate ephemeral objects on disk.
 
