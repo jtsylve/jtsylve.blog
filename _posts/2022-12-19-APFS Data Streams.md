@@ -89,7 +89,7 @@ Name | Description
 `com.apple.fs.symlink` | Target path for symbolic links (file-system-owned)
 `com.apple.fs.firmlink` | Target path for firmlinks (requires entitlement)
 `com.apple.fs.altlink` | Alternative symlink target on sealed volumes
-`com.apple.decmpfs` | Transparent compression metadata (see [DECMPFS](/post/2026/05/25/APFS-DECMPFS))
+`com.apple.decmpfs` | Transparent compression metadata
 `com.apple.ResourceFork` | Resource fork data (hidden for compressed files)
 `com.apple.fs.cow-exempt-file-count` | Count of COW-exempt files (on root directory)
 `com.apple.rootless` | System Integrity Protection flags
