@@ -2,7 +2,7 @@
 layout: post
 title: File System Trees
 series: "APFS Internals"
-series_part: 10
+series_part: 13
 categories: [file-systems, apfs]
 tags: [apfs, fstrees, volumes]
 ---
@@ -89,7 +89,7 @@ Subtype | Description
 
 ## Key Encoding Details
 
-The `obj_id_and_type` field in `j_key_t` packs both the object identifier and type into a single 64-bit value. The `SYSTEM_OBJ_ID_MARK` flag (0x0800000000000000) can be set on the object identifier to distinguish system objects from user objects in volume-group configurations.
+The `obj_id_and_type` field in `j_key_t` packs both the object identifier and type into a single 64-bit value. In a volume group, `SYSTEM_OBJ_ID_MARK` (0x0fffffff00000000) is the smallest object identifier used by the system volume: object identifiers below this value belong to the data volume, and identifiers at or above it belong to the system volume.
 
 When sorting FS-Tree records, the comparison proceeds in three stages:
 

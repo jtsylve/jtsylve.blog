@@ -2,7 +2,7 @@
 layout: post
 title: Volume Superblock Objects
 series: "APFS Internals"
-series_part: 9
+series_part: 12
 categories: [file-systems, apfs]
 tags: [apfs, volumes, superblock]
 ---
@@ -24,7 +24,7 @@ Every volume in APFS has a _Volume Superblock Object_ that serves as the root so
 Volume Superblock Objects are stored on disk as `apfs_superblock_t` structures.  We will discuss many of these structure fields in detail throughout this series.  Below is a short description of each.
 
 ```cpp
-#define APFS_MAGIC 0x41504342 // APSB
+#define APFS_MAGIC 0x42535041 // APSB
 #define APFS_MAX_HIST 8
 #define APFS_VOLNAME_LEN 256
 
@@ -88,6 +88,9 @@ typedef struct apfs_superblock {
     uint32_t apfs_secondary_fsroot_tree_type;           // 0x450
     uint32_t apfs_clonegroup_flags;                     // 0x454
     oid_t apfs_clonegroup_tree_oid;                     // 0x458
+    uint64_t apfs_clonegroup_create_xid;                // 0x460
+    uint64_t apfs_fixup_flags;                          // 0x468
+    uint64_t apfs_clonegroup_next_id;                   // 0x470
 } apfs_superblock_t;
 ```
 
@@ -95,7 +98,7 @@ typedef struct apfs_superblock {
 - `apfs_magic`: Magic value (always `APFS_MAGIC`)
 - `apfs_fs_index`: The index of the object identifier for this volume's file system in the container's array of file systems
 - `apfs_features`: A bit-field of the optional features being used by this volume
-- `apfs_readonly_compatible_features`: A bit-field of the read-only compatible features being used by this volume. (_none currently defined_)
+- `apfs_readonly_compatible_features`: A bit-field of the read-only compatible features being used by this volume. Currently defined: APFS_ROCOMPAT_PFK_UPGRADE (0x02), APFS_ROCOMPAT_CLONE_MAPPING (0x04), and APFS_ROCOMPAT_ATTRIBUTION_TAGS (0x08); a volume with any unsupported bit set must be mounted read-only.
 - `apfs_incompatible_features`: A bit-field of the backward-incompatible features being used by this volume
 - `apfs_unmount_time`: The time that this volume was last unmounted
 - `apfs_fs_reserve_block_count`: The number of blocks that have been reserved for this volume to allocate
@@ -129,16 +132,16 @@ typedef struct apfs_superblock {
 - `apfs_role`: The role of this volume within the container
 - `reserved`: _reserved_
 - `apfs_root_to_xid`: The transaction identifier of the snapshot to root from, or zero to root normally
-- `apfs_er_state_oid`: The object id of the encryption rolling state (or zero if no encryption change is in progress)
+- `apfs_er_state_oid`: The physical object identifier of the encryption rolling state (or zero if no encryption change is in progress)
 - `apfs_cloneinfo_id_epoch`: The largest object identifier used by this volume at the time INODE_WAS_EVER_CLONED started storing valid information
 - `apfs_cloneinfo_xid`: A transaction identifier used with `apfs_cloneinfo_id_epoch`
 - `apfs_snap_meta_ext_oid`: The virtual object identifier of the extended snapshot metadata object
 - `apfs_volume_group_id`: The volume group the volume belongs to (or null UUID if not part of a volume group)
 - `apfs_integrity_meta_oid`: The virtual object identifier of the integrity metadata object
-- `apfs_fext_tree_oid`: The virtual object identifier of the file extent tree (sealed volumes)
+- `apfs_fext_tree_oid`: The physical object identifier of the file extent tree (sealed volumes)
 - `apfs_fext_tree_type`: The type of the file extent tree
 - `apfs_pfkur_tree_type`: The type of the per-file key upgrade rotation tree
-- `apfs_pfkur_tree_oid`: The object identifier of the PFKUR tree (tracks background key re-encryption progress)
+- `apfs_pfkur_tree_oid`: The physical object identifier of the PFKUR tree (tracks background key re-encryption progress)
 - `apfs_doc_id_index_xid`: Transaction identifier of the document identifier index (validated at mount)
 - `apfs_doc_id_index_flags`: Document identifier index flags (bit 1 = needs rebuild)
 - `apfs_doc_id_tree_type`: The type of the document identifier tree
@@ -149,6 +152,9 @@ typedef struct apfs_superblock {
 - `apfs_secondary_fsroot_tree_type`: The type of the secondary root tree
 - `apfs_clonegroup_flags`: Clone group configuration flags (bit 0 enables clone group tracking)
 - `apfs_clonegroup_tree_oid`: The object identifier of the clone group tree
+- `apfs_clonegroup_create_xid`: The transaction identifier of the last volume superblock modification (set at creation, updated each time the superblock is dirtied)
+- `apfs_fixup_flags`: Fixup flags for the volume (purgeable-record and clone-group fixup state)
+- `apfs_clonegroup_next_id`: The next clone group identifier to assign (initialized to 1024)
 
 #### Optional Feature Flags
 

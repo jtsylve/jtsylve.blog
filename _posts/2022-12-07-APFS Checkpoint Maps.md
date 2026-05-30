@@ -93,6 +93,7 @@ When loading a checkpoint, each mapping block and its entries must be validated 
 
 **Per-entry validation:**
 - `cpm_type` must have `OBJ_EPHEMERAL` (`0x80000000`) set, and the low 16-bit type must be one of: `OBJECT_TYPE_BTREE` (2), `OBJECT_TYPE_BTREE_NODE` (3), `OBJECT_TYPE_SPACEMAN` (5), `OBJECT_TYPE_NX_REAPER` (0x11), or `OBJECT_TYPE_NX_REAP_LIST` (0x12)
+- `cpm_subtype` must not have `OBJ_PHYSICAL` or `OBJ_EPHEMERAL` set, and its low 16 bits must be a valid subtype (zero or one of the recognized B-tree subtypes such as `OBJECT_TYPE_OMAP`, `OBJECT_TYPE_FSTREE`, or `OBJECT_TYPE_SPACEMAN_FREE_QUEUE`)
 - `cpm_oid` must be nonzero
 - `cpm_paddr` must fall within the checkpoint data area
 - `cpm_size` must be nonzero, block-aligned, and fit within the data area bounds

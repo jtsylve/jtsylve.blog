@@ -88,7 +88,7 @@ Once the updated object has been fully flushed to disk, and all other objects th
 
 The remaining two fields in the header encode the object's type and (optional) subtype identifiers.  Each distinct APFS object type is assigned a unique _type identifier_.  With few exceptions, this identifier is stored in the 16 _least-significant_ bits of the `o_type` field in the header, with the 16 _most-significant_ bits being used for type flags.
 
-The following is a list of all currently-known object types and their identifiers.  We will discuss the details of many of them throughout the course of this blog series.
+The following is a list of the currently-known object types and their identifiers (in addition to the reserved testing type `OBJECT_TYPE_TEST`, 0xff, which should never appear on a production volume).  We will discuss the details of many of them throughout the course of this blog series.
 
 | Object Type | Type Identifier | Description | Structure |
 | ------------- | ------------- | ----------- | --------- |
@@ -126,16 +126,16 @@ There are three additional known object types that use all 32-bits of the `o_typ
 
 | Object Type | Type Identifier | Description | Structure |
 | ------------- | ------------- | ----------- | --------- |
-| CONTAINER_KEYBAG | 0x7379656b | Container Keybag | `media_keybag_t` |
-| VOLUME_KEYBAG | 0x73636572 | Volume Keybag | `media_keybag_t` |
-| MEDIA_KEYBAG  | 0x79656b6d | Media Keybag | `media_keybag_t` |
+| CONTAINER_KEYBAG | 0x6b657973 | Container Keybag | `media_keybag_t` |
+| VOLUME_KEYBAG | 0x72656373 | Volume Keybag | `media_keybag_t` |
+| MEDIA_KEYBAG  | 0x6d6b6579 | Media Keybag | `media_keybag_t` |
 
 
 B-Tree objects also contain subtypes, which help identify the specific purpose of the tree.  These subtype identifiers are stored in the header's `o_subtype` field.  The following is a list of known b-tree subtypes and the structures that they map.
 
 | Object Subtype | Subtype Identifier | Description | Key Structure | Value Structure |
 | --------------- | --------------- | ----------- | ------------- | --------------- |
-| SPACEMAN_FREE_QUEUE | 0x09 | Space Manager Free-Space Queue | `spaceman_free_queue_key_t` | `spaceman_free_queue_t` |
+| SPACEMAN_FREE_QUEUE | 0x09 | Space Manager Free-Space Queue | `spaceman_free_queue_key_t` | `spaceman_free_queue_val_t` |
 | EXTENT_LIST_TREE | 0x0a | Logical to Physical Mapping of Extents | `paddr_t` | `prange_t` |
 | OMAP | 0x0b | Object Map | `omap_key_t` | `omap_val_t` |
 | FSTREE | 0x0e | File-System Record Tree | `j_key_t` | _variable_ |
@@ -145,10 +145,10 @@ B-Tree objects also contain subtypes, which help identify the specific purpose o
 | FUSION_MIDDLE_TREE | 0x15 | Tracks Cached SSD Fusion Blocks | `fusion_mt_key_t` | `fusion_mt_val_t` |
 | GBITMAP_TREE | 0x1a | General Purpose Bitmap Tree | `uint64_t` | `uint64_t` |
 | FEXT_TREE | 0x1f | File Extents | `fext_tree_key_t` | `fext_tree_val_t` |
-| PFKUR_TREE | 0x20 | Per-File Key Upgrade Rotation | _variable_ | _variable_ |
-| EVICT_MAPPING_TREE | 0x21 | Evict Mapping | `evict_mapping_key_t` | `evict_mapping_val_t` |
+| PFKUR_TREE | 0x20 | Per-File Key Upgrade Rotation | `pfkur_tree_key_t` | `pfkur_tree_val_t` |
+| EVICT_MAPPING_TREE | 0x21 | Evict Mapping | `paddr_t` | `evict_mapping_val_t` |
 | DOC_ID_TREE | 0x22 | Document Identifier | `uint32_t` | `uint64_t` |
-| GRAFT_BLOCKMAP_LUT_TREE | 0x23 | Graft Blockmap LUT | _variable_ | _variable_ |
+| GRAFT_BLOCKMAP_LUT_TREE | 0x23 | Graft Blockmap LUT | `graft_blockmap_lut_key_t` | `graft_blockmap_lut_val_t` |
 | SECONDARY_FSROOT_TREE | 0x24 | Secondary FS Root | `j_key_t` | _variable_ |
 | CLONEGROUP_TREE | 0x25 | Clonegroup | `clonegroup_key_t` | `clonegroup_val_t` |
 

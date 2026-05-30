@@ -2,7 +2,7 @@
 layout: post
 title: Sealed Volumes
 series: "APFS Internals"
-series_part: 13
+series_part: 19
 categories: [file-systems, apfs]
 tags: [apfs, sealed-volumes, integrity]
 ---
@@ -31,7 +31,7 @@ typedef struct integrity_meta_phys {
 - `im_flags`: The configuration flags
 - `im_hash_type`: The hash algorithm that is used
 - `im_root_hash_offset`: The offset (in bytes) of the root hash relative to the start of the object
-- `im_broken_xid`: The identifier of the transaction that unsealed the volume
+- `im_broken_xid`: The identifier of the transaction whose modification broke the seal (zero if the seal is intact)
 - `im_reserved`: _reserved_ (_only in version 2 or above_)
 
 #### Integrity Metadata Flags
@@ -48,7 +48,7 @@ Name | Value | Digest Size | Description
 -----|-------|-------------|------------
 APFS_HASH_INVALID | 0 | n/a | An invalid hash algorithm
 APFS_HASH_SHA256 | 0x1 | 32 bytes | SHA-256 (default)
-APFS_HASH_SHA512_256 (deprecated) | 0x2 | 32 bytes | SHA-512/256 (deprecated; use type 0x5 instead)
+APFS_HASH_SHA512_256_DEPRECATED | 0x2 | 32 bytes | SHA-512/256 (deprecated; use type 0x5 instead)
 APFS_HASH_SHA384 | 0x3 | 48 bytes | SHA-384
 APFS_HASH_SHA512 | 0x4 | 64 bytes | SHA-512
 APFS_HASH_SHA512_256 | 0x5 | 32 bytes | SHA-512/256 (replacement for deprecated type 0x2)
@@ -77,7 +77,7 @@ typedef struct btn_index_node_val {
 
 ## Data Stream Extents
 
-As we discussed yesterday, [_Data Streams_](/post/2022/12/19/APFS-Data-Streams) store their extents as _file system records_ in the File System Tree.  Sealed Volumes store extents in a separate _File Extent Tree_, whose _virtual object identifier_ is stored in the `apfs_fext_tree_oid` of the Volume Superblock.
+As we discussed in an earlier post, [_Data Streams_](/post/2022/12/19/APFS-Data-Streams) store their extents as _file system records_ in the File System Tree.  Sealed Volumes store extents in a separate _File Extent Tree_, whose _physical object identifier_ is stored in the `apfs_fext_tree_oid` of the Volume Superblock.
 
 The key-half of the File Extent Tree entries are `fext_tree_key_t` structures and are sorted first by `private_id` and then by `logical_addr`.
 
@@ -107,7 +107,7 @@ At mount time, the sealed volume's integrity is verified by comparing the on-dis
 
 1. The system checks whether root hash authentication is required based on the volume role and system configuration.
 2. If the seal is broken (`APFS_SEAL_BROKEN` is set in `im_flags`), the mount is rejected with `EAUTH` (error 80) when authentication is required.
-3. The root hash payload contains block-size-specific root hashes. The appropriate hash is selected based on the device's block size: 4 KiB blocks use offset +16, 8 KiB blocks use offset +80, and 16 KiB blocks use offset +144.
+3. The root hash payload contains block-size-specific root hashes. The appropriate hash is selected based on the device's block size: 8 KiB blocks use offset +80, 16 KiB blocks use offset +144, and all other sizes (including 4 KiB) use offset +16.
 4. The selected hash is compared against the on-disk root hash stored at `im_root_hash_offset` within the integrity metadata object. This offset must be at least 0x30 (48 bytes) and is typically set to 0x80 (128 bytes).
 5. If the hashes match, the volume is verified. If they do not match and authentication is required, the system boots to recovery mode.
 

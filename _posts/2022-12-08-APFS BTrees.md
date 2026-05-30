@@ -56,8 +56,8 @@ typedef struct btree_info {
 } btree_info_t;                  // 0x28
 ```
 - `bt_fixed`: Information about the B-tree that doesnʼt change over time
-- `bt_longest_key`: The size (in bytes) of the largest key stored in the tree
-- `bt_longest_val`: The size (in bytes) of the largest value stored in the tree
+- `bt_longest_key`: The size (in bytes) of the longest key ever stored in the tree; this is a high-water mark that is never decreased
+- `bt_longest_val`: The size (in bytes) of the longest value ever stored in the tree; this is a high-water mark that is never decreased
 - `bt_key_count`: The number of keys stored in the B-Tree
 - `bt_node_count`: The number of nodes that make up the B-Tree
 
@@ -166,7 +166,7 @@ The area where value data is stored is called the _value area_. For non-root nod
 
 ## Key and Value Alignment
 
-By default, keys and values within B-Tree nodes are aligned to 8-byte boundaries. Padding bytes between entries ensure proper alignment. When the `BTREE_KV_NONALIGNED` flag is set in the B-Tree info, alignment padding is disabled. Forensic tools must account for this padding when calculating the actual offsets of entries; the `x_size` or key/value lengths in the ToC do not include the padding.
+By default, keys and values within B-Tree nodes are aligned to 8-byte boundaries. Padding bytes between entries ensure proper alignment. When the `BTREE_KV_NONALIGNED` flag is set in the B-Tree info, alignment padding is disabled. Forensic tools must account for this padding when calculating the actual offsets of entries; the key/value lengths recorded in the ToC do not include the padding.
 
 ## Ghost and Empty-Value Entries
 

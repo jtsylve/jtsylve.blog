@@ -2,7 +2,7 @@
 layout: post
 title: Decryption
 series: "APFS Internals"
-series_part: 16
+series_part: 22
 categories: [file-systems, apfs]
 tags: [apfs, decryption, encryption]
 ---

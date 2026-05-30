@@ -2,7 +2,7 @@
 layout: post
 title: Keybags
 series: "APFS Internals"
-series_part: 14
+series_part: 20
 categories: [file-systems, apfs]
 tags: [apfs, keybags, encryption]
 ---
@@ -52,7 +52,7 @@ typedef struct kb_locker {
 ```
 - `kl_version`: The keybag's version (currently always 2)
 - `kl_nkeys`: Number of entries stored in the keybag
-- `kl_nbytes`: The size (in bytes) of the data stored in the `kl_entries` field
+- `kl_nbytes`: The total size (in bytes) of the `kb_locker_t`, including the fixed header fields (`kl_version`, `kl_nkeys`, `kl_nbytes`, and `padding`) plus the variable-length `kl_entries` data
 - `padding`: _reserved_
 - `kl_entries`: The start of the entries
 
@@ -89,7 +89,7 @@ KB_TAG_VOLUME_M_KEY | 6 | The key data stores a key that's used to wrap volume m
 KB_TAG_VOLUME_DEVICE_KEY | 7 | A class-based device wrapping key for hardware encryption configurations
 KB_TAG_RESERVED_F8 | 0xF8 | _reserved_
 
-When iterating keybag entries, each entry must be aligned to a 16-byte boundary. After reading `ke_keylen` bytes of `ke_keydata`, advance the pointer to the next 16-byte-aligned position before reading the next `keybag_entry_t`. Additionally, `ke_keylen` must be less than 512 bytes, and `kl_nbytes` must be at least 16 and must not exceed the keybag's total block size minus the header.
+When iterating keybag entries, each entry must be aligned to a 16-byte boundary. After reading `ke_keylen` bytes of `ke_keydata`, advance the pointer to the next 16-byte-aligned position before reading the next `keybag_entry_t`. Additionally, `ke_keylen` must be less than 512 bytes, and `kl_nbytes` must be at least 16 and must not exceed the keybag's total allocation size minus 32 (the size of the `obj_phys_t` header).
 
 ### Protection Classes
 
@@ -102,7 +102,7 @@ A (Complete Protection) | 1 | Only when the device is unlocked
 B (Protected Unless Open) | 2 | Until the file is closed after first unlock
 C (Protected Until First User Authentication) | 3 | After first unlock until reboot (default)
 D (No Protection) | 4 | Always available
-F | 6 | Hardware-managed class
+F (No Protection, Non-Persistent Key) | 6 | No protection with a volatile key; for temporary files that do not survive reboots (e.g. swap)
 G | 7 | Reserved
 
 Each file's protection class is stored in the `default_protection_class` field of its `j_inode_val_t` and in the `persistent_class` field of its `wrapped_crypto_state_t` record.

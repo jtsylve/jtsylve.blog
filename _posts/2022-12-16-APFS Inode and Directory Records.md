@@ -2,7 +2,7 @@
 layout: post
 title: Inode and Directory Records
 series: "APFS Internals"
-series_part: 11
+series_part: 14
 categories: [file-systems, apfs]
 tags: [apfs, inodes, directories]
 ---
@@ -119,7 +119,7 @@ Every folder in the file system will store a _directory record_ for each of its 
 
 ```cpp
 #define J_DREC_LEN_MASK 0x000003ff
-#define J_DREC_HASH_MASK 0xfffff400
+#define J_DREC_HASH_MASK 0xfffffc00
 #define J_DREC_HASH_SHIFT 10
 
 // A directory record key
@@ -130,7 +130,7 @@ typedef struct j_drec_hashed_key {
 } j_drec_hashed_key_t;
 ```
 - `hdr`: The record's header
-- `name_len_and_hash`: Encodes the length (in-bytes) of the UTF-8 encoded name in the 10 _least significant bits_ and a hash of the name in the _most significant bits_.
+- `name_len_and_hash`: Encodes the length (in bytes, including the trailing null character) of the UTF-8 encoded name in the 10 _least significant bits_ and a 22-bit hash of the name in the upper bits.
 - `name`: A null-terminated UTF-8 encoded name of the entry
 
 
@@ -226,11 +226,17 @@ INO_EXT_TYPE_DSTREAM | 8 | `j_dstream_t` | A data stream
 INO_EXT_TYPE_RESERVED_9 | 9 | | _reserved_
 INO_EXT_TYPE_DIR_STATS_KEY | 10 | `j_dir_stats_val_t` | Statistics about a directory
 INO_EXT_TYPE_FS_UUID | 11 | `uuid_t` | The UUID of a file system that's automatically mounted in this directory
-INO_EXT_TYPE_RESERVED_12 | 12 | | _reserved_
+INO_EXT_TYPE_UNRAW_SIZE | 12 | `uint64_t` | The unencrypted (raw) file size for a raw-encrypted inode
 INO_EXT_TYPE_SPARSE_BYTES | 13 | `uint64_t` | The number of sparse bytes in the data stream
 INO_EXT_TYPE_RDEV | 14 | `uint32_t` | The device identifier for a block- or character-special device
-INO_EXT_TYPE_PURGEABLE_FLAGS | 15 | | _reserved_
+INO_EXT_TYPE_PURGEABLE_FLAGS | 15 | `uint64_t` | The pending purgeable state flags applied when the inode becomes purgeable
 INO_EXT_TYPE_ORIG_SYNC_ROOT_ID | 16 | `uint64_t` | The inode number of the sync-root hierarchy that this file originally belonged to
+INO_EXT_TYPE_NLINK | 17 | `uint64_t` | A directory's link count (legacy; current volumes store this in `nlink`)
+INO_EXT_TYPE_SOURCE_PURGE_ID | 18 | `uint64_t` | The source purge identifier used for purgeable-record lookup (set during clone operations)
+INO_EXT_TYPE_ATTRIBUTION_TAG_HASH | 19 | `uint64_t` | A hash of the file's attribution tag (code signing identity)
+INO_EXT_TYPE_SPEC_TELEMETRY_STATE | 20 | `uint16_t` | Speculative download telemetry state (legacy; read and removed but never written)
+INO_EXT_TYPE_CLONEGROUP_ID | 21 | `uint64_t` | The clone group identifier this inode belongs to
+INO_EXT_TYPE_SPEC_TELEMETRY_TRIGGER | 22 | `uint64_t` | Speculative download telemetry trigger information for purgeable files
 
 #### Extended Field Types (Directory Records)
 
@@ -238,6 +244,7 @@ INO_EXT_TYPE_ORIG_SYNC_ROOT_ID | 16 | `uint64_t` | The inode number of the sync-
 Name | Value | Value Type | Description
 -----|-------|------------|------------
 DREC_EXT_TYPE_SIBLING_ID | 1 | `uint64_t` | The sibling identifier for a directory record
+DREC_EXT_TYPE_DIR_GEN_COUNT | 2 | `uint64_t` | The directory generation count for a purgeable directory record
 
 #### Extended Field Flags
 
@@ -246,7 +253,7 @@ Name | Value | Description
 -----|-------|------------
 XF_DATA_DEPENDENT | 0x0001 | The data in this extended field depends on the file's data
 XF_DO_NOT_COPY | 0x0002 | When copying this file, omit this extended field from the copy
-XF_RESERVED_4 | 0x0004 | _reserved_
+XF_BTREE_TRACKED | 0x0004 | The extended field has an associated tracking record in a separate B-Tree
 XF_CHILDREN_INHERIT | 0x0008 | When creating a new entry in this directory, copy this extended field to the new directory entry
 XF_USER_FIELD | 0x0010 | This extended field was added by a user-space program
 XF_SYSTEM_FIELD | 0x0020 | This extended field was added by the kernel

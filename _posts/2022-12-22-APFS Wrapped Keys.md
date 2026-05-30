@@ -2,7 +2,7 @@
 layout: post
 title: Wrapped Keys
 series: "APFS Internals"
-series_part: 15
+series_part: 21
 categories: [file-systems, apfs]
 tags: [apfs, wrapped-keys, encryption]
 ---
@@ -131,7 +131,7 @@ The wrapped key is always 8 bytes longer than the unwrapped key (the ICV overhea
 
 ## Per-File Encryption State
 
-On volumes with per-file encryption (not single-key mode), each file's encryption state is stored in a `wrapped_crypto_state_t` structure within `APFS_TYPE_CRYPTO_STATE` records in the [File System Tree](/post/2022/12/15/APFS-FSTrees):
+On volumes that use per-file key encryption (`APFS_FS_SCALEABLE_PFK`), each file's encryption state is stored in a `wrapped_crypto_state_t` structure within `APFS_TYPE_CRYPTO_STATE` records in the [File System Tree](/post/2022/12/15/APFS-FSTrees). Note that per-file key encryption requires hardware encryption; the software decryption path described here applies to single-key (`APFS_FS_ONEKEY`) volumes:
 
 ```cpp
 typedef struct wrapped_crypto_state {
@@ -148,7 +148,7 @@ typedef struct wrapped_crypto_state {
 - `major_version`: Currently 5
 - `minor_version`: Currently 0
 - `cpflags`: Crypto flags (`CP_RAW_KEY_WRAPPEDKEY` = 0x01 indicates a SEP-wrapped hardware key)
-- `persistent_class`: The file's [protection class](/post/2022/12/21/APFS-Keybags) (1-7)
+- `persistent_class`: The file's [protection class](/post/2022/12/21/APFS-Keybags) (a value in the range 0-7; class 5 is unused and class 0 means inherit-from-directory)
 - `key_os_version`: The OS version that created this key, packed as major/minor/build
 - `key_revision`: Key revision counter (incremented on re-wrap)
 - `key_len`: Length of the wrapped key data in bytes (max 128)
@@ -156,7 +156,7 @@ typedef struct wrapped_crypto_state {
 
 The `persistent_class` determines when the key is available for unwrapping (see [Protection Classes](/post/2022/12/21/APFS-Keybags)). The `key_os_version` is encoded as a packed integer: `(major << 24) | (minor << 16) | build`.
 
-On single-key volumes (`APFS_FS_ONEKEY`), per-file crypto state records do not exist. Instead, all files use the volume-level VEK with per-extent tweaks.
+On single-key volumes (`APFS_FS_ONEKEY`), per-file crypto state records do not exist. Instead, all files are decrypted with the volume-level VEK as an AES-XTS key, using the `crypto_id` from each `APFS_TYPE_FILE_EXTENT` record (`j_file_extent_val_t`) as the tweak.
 
 ## Conclusion
 

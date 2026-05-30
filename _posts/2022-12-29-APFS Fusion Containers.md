@@ -2,7 +2,7 @@
 layout: post
 title: Fusion Containers
 series: "APFS Internals"
-series_part: 18
+series_part: 26
 categories: [file-systems, apfs]
 tags: [apfs, fusion, containers]
 ---

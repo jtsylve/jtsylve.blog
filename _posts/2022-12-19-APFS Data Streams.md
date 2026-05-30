@@ -2,7 +2,7 @@
 layout: post
 title: Data Streams
 series: "APFS Internals"
-series_part: 12
+series_part: 16
 categories: [file-systems, apfs]
 tags: [apfs, data-streams, extents]
 ---
@@ -61,7 +61,7 @@ typedef struct j_xattr_val {
 } j_xattr_val_t;
 ```
 - `flags`: The extended attribute record's flags
-- `xdata_len`: The length of the extended attribute's inline data
+- `xdata_len`: The length of the data in `xdata`. When `XATTR_DATA_EMBEDDED` is set this is the inline data length; when `XATTR_DATA_STREAM` is set this is the size of the `j_xattr_dstream_t` structure (48 bytes), and the logical data size is found in the embedded `j_dstream_t`.
 - `xdata`: The extended attribute data or the identifier of a data stream that contains the data
 
 #### Extended Attribute Value Flags
@@ -220,5 +220,5 @@ On encrypted volumes with per-file keys, the clone initially receives a `crypto_
 
 ## Conclusion
 
-Understanding _data streams_ and their on-disk structures is essential to analyzing APFS. This post discussed the _default data stream_, _extended attributes_, _file extents_, _physical extent records_ with reference counting, _data stream identifiers_, and the copy-on-write mechanics that enable efficient file cloning. Later this week, we will discuss how parsing this information differs in both _Sealed_ and _Encrypted_ volumes.
+Understanding _data streams_ and their on-disk structures is essential to analyzing APFS. This post discussed the _default data stream_, _extended attributes_, _file extents_, _physical extent records_ with reference counting, _data stream identifiers_, and the copy-on-write mechanics that enable efficient file cloning. Later in this series, we will discuss how parsing this information differs in both _Sealed_ and _Encrypted_ volumes.
 

@@ -146,11 +146,11 @@ If all goes well, we're in business.
 
 NX Superblock objects are stored in the container's _Checkpoint Descriptor Area_.  In order to locate these superblocks, we must first identify and scan the descriptor area blocks, looking for valid NX Superblock objects.  In some cases, the blocks of the descriptor area are all physically contiguous on disk, which means we only have a single range of blocks to scan.  In other cases, we may need to locate multiple non-contiguous ranges of blocks and scan them in order.
 
-Read the `nx_xp_desc_base` field of the block-zero superblock.  The _most-significant bit_ (MSB) of this value is a flag, and the remaining 63 _least-significant bits_ (LSBs) contain a physical block address.
+Read the `nx_xp_desc_blocks` field of the block-zero superblock.  _Bit 31_ of this value is a flag, and the lower 31 bits hold the number of blocks in the descriptor area (mask with `& 0x7FFFFFFF` to recover the count).
 
-If the MSB is unset, the descriptor area consists of only a single range of contiguous blocks. The rest of `nx_xp_desc_base` contains the block number of the starting block, and the `nx_xp_desc_blocks` field contains the number of blocks in the area.
+If bit 31 is clear, the descriptor area consists of only a single range of contiguous blocks. In that case `nx_xp_desc_base` contains the block number of the starting block, and the lower 31 bits of `nx_xp_desc_blocks` contain the number of blocks in the area.
 
-Things are a bit more complicated if the MSB is set.  The descriptor area is stored non-contiguously and we'll need to scan multiple ranges.  Rather than the starting block, the LSBs of `nx_xp_desc_base` encode the physical address of a _B-Tree Root Node_ object.  
+Things are a bit more complicated if bit 31 of `nx_xp_desc_blocks` is set.  The descriptor area is stored non-contiguously and we'll need to scan multiple ranges.  Rather than a starting block, `nx_xp_desc_base` holds the physical object identifier of a _B-Tree_ (a metadata fragmented extent list tree) that describes the ranges.  
 
 _We will discuss B-Trees, and how to parse them later this week, but for now it is only necessary to understand that B-Trees in APFS are essentially just ordered key/value stores._  
 

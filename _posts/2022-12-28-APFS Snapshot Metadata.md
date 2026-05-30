@@ -2,12 +2,12 @@
 layout: post
 title: Snapshot Metadata
 series: "APFS Internals"
-series_part: 17
+series_part: 24
 categories: [file-systems, apfs]
 tags: [apfs, snapshots]
 ---
 
-Our previous post covered how [_Object Maps_](/post/2022/12/12/APFS-OMAP) facilitate the implementation of point-in-time _Snapshots_ of APFS file systems by preserving [_File System Tree Nodes_](/post/2022/12/15/APFS-FSTrees) from earlier transactions. In that discussion, I outlined the on-disk structure of the _Object Map Snapshot Tree_ and how it can be used to enumerate the transaction identifiers of each Volume Snapshot. Today, we will briefly discuss two other sources of information that store additional metadata about each Snapshot.
+Earlier in this series, we covered how [_Object Maps_](/post/2022/12/12/APFS-OMAP) facilitate the implementation of point-in-time _Snapshots_ of APFS file systems by preserving [_File System Tree Nodes_](/post/2022/12/15/APFS-FSTrees) from earlier transactions. In that discussion, I outlined the on-disk structure of the _Object Map Snapshot Tree_ and how it can be used to enumerate the transaction identifiers of each Volume Snapshot. Today, we will briefly discuss two other sources of information that store additional metadata about each Snapshot.
 
 ## Snapshot Metadata Tree
 
@@ -43,10 +43,10 @@ typedef struct j_snap_metadata_val {
 - `sblock_oid`: The _physical object identifier_ of a backup of the snapshot's Volume Superblock
 - `create_time`: The time when the snapshot was created
 - `change_time`: The time that this snapshot was last modified
-- `inum`: _reserved_
+- `inum`: The inode number of the snapshot's directory entry in the Snapshot Metadata Tree
 - `extentref_tree_type`: The type of the _Extent Reference Tree_
 - `flags`: A bit field that contains additional information about a snapshot metadata record
-- `name_len`: The length of the name that follows this structure (in bytes)
+- `name_len`: The length of the null-terminated name that follows this structure, in bytes (including the null terminator)
 
 #### Snapshot Metadata Record Flags
 
@@ -67,8 +67,8 @@ typedef struct j_snap_name_key {
   uint8_t name[0];    // 0x0A
 } j_snap_name_key_t;
 ```
-- `hdr`: The record's header.  The object identifier can be ignored.
-- `name_len`: The length of the name (in bytes)
+- `hdr`: The record's header.  The object identifier is always `~0ULL`.
+- `name_len`: The length of the null-terminated name, in bytes (including the null terminator)
 - `name`: The start of the UTF-8 encoded name
 
 The value-half is a `j_snap_name_val_t` structure.
@@ -118,7 +118,7 @@ Deleting a snapshot is a multi-step background process that merges physical exte
 
 3. During the merge, `SNAP_META_MERGE_IN_PROGRESS` is set on both source and destination snapshot metadata records. Extents are merged in batches (up to 2048 per transaction). If a transaction cannot allocate space for the full batch, the batch size is halved until it succeeds. The thread yields between batches to allow other work to proceed.
 
-4. The implementation compares the source and destination extentref tree key counts to choose the merge direction. If the destination tree is larger, it merges the source into the destination (forward merge). If the source tree is larger, it swaps roles so the smaller tree is merged into the larger, minimizing B-tree operations.
+4. The implementation compares the source and destination extentref tree key counts to choose the merge direction. If the destination count is greater than or equal to the source count, it merges the source into the destination (forward merge). If the source count is strictly greater, it swaps roles so the smaller tree is merged into the larger, minimizing B-tree operations.
 
 5. After the merge completes, the source extentref tree is deleted, the snapshot metadata and name records are removed from the Snapshot Metadata Tree, and the [Object Map snapshot entry](/post/2022/12/12/APFS-OMAP) is deleted.
 
