@@ -26,6 +26,27 @@ layout: default
           aria-label="Estimated reading time: {{ minutes }} minutes">
       ~{{ minutes }} min read
     </span>
+
+    {% if page.last_modified_at %}
+    {% assign published_day = page.date | date: "%Y-%m-%d" %}
+    {% assign modified_day = page.last_modified_at | date: "%Y-%m-%d" %}
+    {% if modified_day != published_day %}
+    <span class="separator">&middot;</span>
+    <span class="post-updated">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M21 2v6h-6"/>
+        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/>
+        <path d="M3 22v-6h6"/>
+        <path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+      </svg>
+      Updated
+      <time datetime="{{ page.last_modified_at | date_to_xmlschema }}">
+        {{ page.last_modified_at | date: "%B %e, %Y" }}
+      </time>
+    </span>
+    {% endif %}
+    {% endif %}
   </div>
 
   {{ content }}

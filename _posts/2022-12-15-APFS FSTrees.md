@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 13
 categories: [file-systems, apfs]
 tags: [apfs, fstrees, volumes]
+last_modified_at: 2026-06-01
 ---
 
 Each APFS volume has a logical file system stored on disk as a collection of File System Objects. Unlike other [APFS Objects](/post/2022/12/01/Anatomy-of-an-APFS-Object), File System Objects consist of one or more File System Records, which are stored in the volume’s File System Tree (FS-Tree). Each record stores specific information about a file or directory. Analyzing each record and associating them with other records with the same identifier gives a complete picture of the file system entry. This post will discuss how these records are organized in the volume's FS-Tree.

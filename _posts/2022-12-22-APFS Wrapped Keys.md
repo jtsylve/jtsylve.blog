@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 21
 categories: [file-systems, apfs]
 tags: [apfs, wrapped-keys, encryption]
+last_modified_at: 2026-06-01
 ---
 
 In our last post, we discussed both [Volume and Container Keybags](/post/2022/12/21/APFS-Keybags) and how they protect wrapped _Volume Encryption_ and _Key Encryption Keys_. Depending on whether the encrypted volume was migrated from an HFS+ encrypted [Core Storage](https://en.wikipedia.org/wiki/Core_Storage) volume, there are subtle differences in how these keys are used. In this post, we will discuss the structure of these wrapped keys and how they can be used to access the raw _Volume Encryption Keys_ that encrypt data on the file system.

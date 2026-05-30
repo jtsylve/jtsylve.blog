@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 7
 categories: [file-systems, apfs]
 tags: [apfs, btrees, indexing]
+last_modified_at: 2026-06-01
 ---
 
 Mastering the skill of B-Tree traversal is essential in parsing information from APFS. Our [last post](/post/2022/12/08/APFS-BTrees) gave an overview of APFS B-Trees, their layout, and on-disk node structures.  Today, we will discuss applying that knowledge to perform enumeration and fast lookups of referenced objects.  

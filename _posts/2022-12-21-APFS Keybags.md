@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 20
 categories: [file-systems, apfs]
 tags: [apfs, keybags, encryption]
+last_modified_at: 2026-06-01
 ---
 
 APFS is designed with encryption in mind and removes the need for the [Core Storage layer](https://en.wikipedia.org/wiki/Core_Storage) used to provide encryption in HFS+. When you enable encryption on a volume, the entire [_File System Tree_](/post/2022/12/15/APFS-FSTrees) and the contents of files within that volume are encrypted. The type of encryption depends on the capabilities of the hardware that it is running on. For example, hardware encryption is used for internal storage on devices that support it, such as macOS computers with T2, M1, or M2 security chips and all iOS devices. Software encryption is used for external and internal storage devices without hardware encryption support. When hardware encryption is used, the data cannot be decrypted on any other device.  For our purposes, we will focus on the software encryption mechanisms used in macOS.  The hardware encryption functions similarly, but the security chip must broker all decryption operations.

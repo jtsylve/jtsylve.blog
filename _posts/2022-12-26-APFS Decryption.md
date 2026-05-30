@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 22
 categories: [file-systems, apfs]
 tags: [apfs, decryption, encryption]
+last_modified_at: 2026-06-01
 ---
 
 Now that we know how to parse the [File System Tree](/post/2022/12/15/APFS-FSTrees), [analyze keybags](/post/2022/12/21/APFS-Keybags), and [unwrap decryption keys](/post/2022/12/22/APFS-Wrapped-Keys), it's time to put it all together and learn how to decrypt file system metadata and file data on encrypted volumes in APFS.

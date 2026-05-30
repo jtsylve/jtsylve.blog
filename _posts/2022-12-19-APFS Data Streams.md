@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 16
 categories: [file-systems, apfs]
 tags: [apfs, data-streams, extents]
+last_modified_at: 2026-06-01
 ---
 
 Data in APFS that is too large to store within records is stored elsewhere on disk and referenced by _data streams (`dstreams`)_.  Similar to _non-resident attributes_ in NTFS, APFS data streams manage a set of _extents_ that reference the number and order of blocks on the disk which contain external data.  In this post, we will discuss how _data streams_ are used in APFS to manage one or more [forks](https://en.wikipedia.org/wiki/Fork_(file_system)) of data in inodes as well as their record structures in the [_File System Tree_](/post/2022/12/15/APFS-FSTrees).

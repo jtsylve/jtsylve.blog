@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 3
 categories: [file-systems, apfs]
 tags: [apfs, containers]
+last_modified_at: 2026-06-01
 ---
 
 APFS is a _pooled storage_, _transactional_, _copy-on-write_ file system. Its design relies on a core management layer known as the _Container_. APFS containers consist of a collection of several specialized components: The _Space Manager_, the _Checkpoint Areas_, and the _Reaper_. In today's post, we will give an overview of APFS containers and these components, including the mount procedure, transaction lifecycle, and container resize mechanisms.

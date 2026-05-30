@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 2
 categories: [file-systems, apfs]
 tags: [apfs, objects, virtual, physical, ephemeral]
+last_modified_at: 2026-06-01
 ---
 
 As we discussed in [our last post](/post/2022/12/01/Anatomy-of-an-APFS-Object), _objects_ are the fundamental building blocks of APFS.  While there are many different object _types_, each individual object can be one of three _kinds_: _physical_, _virtual_, or _ephemeral_.  While each of these objects can be found on disk, there are differences in their lifetimes as well as the techniques needed to locate them.

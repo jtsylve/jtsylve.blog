@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 4
 categories: [file-systems, apfs]
 tags: [apfs, nx-superblock, containers]
+last_modified_at: 2026-06-01
 ---
 
 The _NX Superblock Object_ is a key component of APFS. It stores key information about the Container, such as the block size, total number of blocks, supported features, and the object IDs of various trees and other structures used to track and maintain other objects. The on-disk `nx_superblock_t` structure is used as the root source of information to locate all other objects in the checkpoint.  In this post, we will go into detail about this structure as well as discuss methodology that can be used to locate them on-disk.

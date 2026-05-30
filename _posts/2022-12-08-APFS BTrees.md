@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 6
 categories: [file-systems, apfs]
 tags: [apfs, btrees, indexing]
+last_modified_at: 2026-06-01
 ---
 
 In [yesterday's post](/post/2022/12/07/APFS-Checkpoint-Maps), we discussed Checkpoint Maps, the simple linear-time data structures that APFS uses to manage persistent, ephemeral objects.  Today, we will give a general overview of B-Trees and detail the layout and on-disk structures of B-Tree Nodes.  

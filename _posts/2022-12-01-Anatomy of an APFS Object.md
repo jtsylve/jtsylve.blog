@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 1
 categories: [file-systems, apfs]
 tags: [apfs, objects, blocks]
+last_modified_at: 2026-06-01
 ---
 
 APFS is a _copy-on-write_ file system, consisting of a set of immutable objects that are the fundamental building blocks of the file system's design.  _APFS objects_ are made up of one or more fixed-size _blocks_.  Block sizes are configurable at the time of formatting a new container.  Valid block sizes are any power-of-two sized value between 4 KiB and 64 KiB of data, and must always be an integer multiple of the block size of the underlying storage device.  At the time of this writing, the default (and thus most common) block size is 4 KiB.

@@ -720,6 +720,33 @@ footer {
   font-variant-numeric: tabular-nums;
 }
 
+// "Updated" pill -- shown when a post carries last_modified_at
+.post-updated {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--color-accent-subtle-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-subtle-bg);
+  color: var(--color-accent);
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+
+  svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+
+  time {
+    color: inherit;
+    font-size: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
 // Series navigation
 .series-nav {
   display: block;

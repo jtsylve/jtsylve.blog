@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 24
 categories: [file-systems, apfs]
 tags: [apfs, snapshots]
+last_modified_at: 2026-06-01
 ---
 
 Earlier in this series, we covered how [_Object Maps_](/post/2022/12/12/APFS-OMAP) facilitate the implementation of point-in-time _Snapshots_ of APFS file systems by preserving [_File System Tree Nodes_](/post/2022/12/15/APFS-FSTrees) from earlier transactions. In that discussion, I outlined the on-disk structure of the _Object Map Snapshot Tree_ and how it can be used to enumerate the transaction identifiers of each Volume Snapshot. Today, we will briefly discuss two other sources of information that store additional metadata about each Snapshot.

@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 5
 categories: [file-systems, apfs]
 tags: [apfs, checkpoints, ephemeral]
+last_modified_at: 2026-06-01
 ---
 
 In our [last post](/post/2022/12/06/APFS-NX-Superblock), we discussed _NX Superblock Objects_ and how they can be used to locate the _Checkpoint Descriptor Area_ in which they are stored.  Today, we will discuss the other type of objects that are stored in the descriptor area, _Checkpoint Maps_, and how they can be used to find persistent, ephemeral objects on disk. 

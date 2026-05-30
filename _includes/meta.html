@@ -34,6 +34,7 @@
       "@type": "BlogPosting",
       "headline": "{{ page.title | escape }}",
       "datePublished": "{{ page.date | date_to_xmlschema }}",
+      "dateModified": "{{ page.last_modified_at | default: page.date | date_to_xmlschema }}",
       "author": {
         "@type": "Person",
         "name": "Joe T. Sylve",

@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 12
 categories: [file-systems, apfs]
 tags: [apfs, volumes, superblock]
+last_modified_at: 2026-06-01
 ---
 
 The _Volume Superblock_ is a data structure containing key information about an individual APFS volume. This post covers locating the Volume Superblock on disk and describes the on-disk format’s fields.

@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 14
 categories: [file-systems, apfs]
 tags: [apfs, inodes, directories]
+last_modified_at: 2026-06-01
 ---
 
 Each APFS [_file system entry_](/post/2022/12/15/APFS-FSTrees) has both an _inode_ and _directory record_. The inode record stores metadata such as the entry’s timestamps, ownership, type, and permissions (among others). Directory records store information about where the entry is stored within the file system’s hierarchy. A single inode may be referenced by more than one directory record, meaning the same file or folder may be present at multiple paths in the file system, as is the case with hard links.
