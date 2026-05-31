@@ -6,8 +6,12 @@ permalink: /apfs/
 
 A deep dive into the Apple File System. The series began as the
 [2022 APFS Advent Challenge](/post/2022/11/27/APFS-Advent-Challenge-2022) and has
-since grown to 27 parts covering the container layer, B-Trees, the volume and
-file-system layer, encryption, and advanced features.
+since grown into a 27-part reference covering the container layer, B-Trees, the
+volume and file-system layer, integrity and encryption, and APFS's advanced
+features. The original posts have been [revised and kept up to
+date](/post/2026/06/01/Revisiting-the-APFS-Series) rather than left as 2022
+snapshots, and new parts are rolling out over the coming weeks. Parts not yet
+published are marked "Coming Soon" below.
 
 {% assign outline = site.data.series | where: "name", "APFS Internals" | first %}
 {% assign published = site.posts | where: "series", "APFS Internals" %}
