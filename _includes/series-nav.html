@@ -1,7 +1,8 @@
 {% if page.series %}
-{% assign series_posts = site.posts | where: "series", page.series
-   | sort: "series_part" %}
-{% assign total = series_posts | size %}
+{% assign outline = site.data.series | where: "name", page.series | first %}
+{% assign published = site.posts | where: "series", page.series %}
+{% assign total = 0 %}
+{% for section in outline.sections %}{% assign total = total | plus: section.parts.size %}{% endfor %}
 
 <nav class="series-nav" aria-label="Series navigation">
   <details>
@@ -11,15 +12,16 @@
     </summary>
     <div class="series-divider"></div>
     <ol class="series-toc">
-      {% for post in series_posts %}
-      <li{% if post.url == page.url %} class="current" aria-current="page"{% endif %}>
-        {% if post.url == page.url %}
-          <span>{{ post.series_part }}. {{ post.title | remove: "2022 APFS Advent Challenge " }}</span>
-        {% else %}
-          <a href="{{ post.url }}">{{ post.series_part }}. {{ post.title | remove: "2022 APFS Advent Challenge " }}</a>
-        {% endif %}
-      </li>
-      {% endfor %}
+      {% for section in outline.sections %}{% for item in section.parts %}
+      {% assign post = published | where: "series_part", item.part | first %}
+      {% if post and post.url == page.url %}
+      <li class="current" aria-current="page"><span>{{ item.part }}. {{ post.title | remove: "2022 APFS Advent Challenge " }}</span></li>
+      {% elsif post %}
+      <li><a href="{{ post.url }}">{{ item.part }}. {{ post.title | remove: "2022 APFS Advent Challenge " }}</a></li>
+      {% else %}
+      <li class="coming-soon"><span>{{ item.part }}. {{ item.title }}</span></li>
+      {% endif %}
+      {% endfor %}{% endfor %}
     </ol>
   </details>
 </nav>

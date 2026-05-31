@@ -1,0 +1,81 @@
+# Planned outline for post series.
+#
+# Each entry's `name` matches the `series:` front-matter value on posts. The
+# `sections` define the full planned structure; each part's `title` is used for
+# parts that are not yet published (rendered as "Coming Soon"). Once a post with a
+# matching `series_part` is published, its own title and URL take over.
+#
+# This is the single source of truth for series structure -- adding a planned part
+# here (before its post exists) makes it appear as "Coming Soon" on the series page
+# and in the per-post series sidebar.
+
+- name: "APFS Internals"
+  sections:
+    - title: "Foundations"
+      parts:
+        - part: 1
+          title: "Anatomy of an Object"
+        - part: 2
+          title: "Kinds of Objects"
+    - title: "The Container Layer"
+      parts:
+        - part: 3
+          title: "Containers"
+        - part: 4
+          title: "NX Superblock Objects"
+        - part: 5
+          title: "Checkpoint Maps and Ephemeral Objects"
+    - title: "B-Trees and Indexing"
+      parts:
+        - part: 6
+          title: "B-Trees (Part 1)"
+        - part: 7
+          title: "B-Trees (Part 2)"
+        - part: 8
+          title: "Object Maps"
+    - title: "Container Internals"
+      parts:
+        - part: 9
+          title: "Space Manager"
+        - part: 10
+          title: "The Reaper"
+        - part: 11
+          title: "EFI Jumpstart"
+    - title: "The Volume and File-System Layer"
+      parts:
+        - part: 12
+          title: "Volume Superblock Objects"
+        - part: 13
+          title: "File System Trees"
+        - part: 14
+          title: "Inode and Directory Records"
+        - part: 15
+          title: "Hard Links and Siblings"
+        - part: 16
+          title: "Data Streams"
+        - part: 17
+          title: "Transparent Compression (DECMPFS)"
+        - part: 18
+          title: "Clonegroups"
+    - title: "Integrity and Encryption"
+      parts:
+        - part: 19
+          title: "Sealed Volumes"
+        - part: 20
+          title: "Keybags"
+        - part: 21
+          title: "Wrapped Keys"
+        - part: 22
+          title: "Decryption"
+        - part: 23
+          title: "Encryption Rolling"
+    - title: "Snapshots and Advanced Features"
+      parts:
+        - part: 24
+          title: "Snapshot Metadata"
+        - part: 25
+          title: "Volume Grafting"
+        - part: 26
+          title: "Fusion Containers"
+        - part: 27
+          title: "Speculative Telemetry"
