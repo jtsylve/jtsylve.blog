@@ -10,8 +10,7 @@ since grown into a 27-part reference covering the container layer, B-Trees, the
 volume and file-system layer, integrity and encryption, and APFS's advanced
 features. The original posts have been [revised and kept up to
 date](/post/2026/06/01/Revisiting-the-APFS-Series) rather than left as 2022
-snapshots, and new parts are rolling out over the coming weeks. Parts not yet
-published are marked "Coming Soon" below.
+snapshots.
 
 {% assign outline = site.data.series | where: "name", "APFS Internals" | first %}
 {% assign published = site.posts | where: "series", "APFS Internals" %}
