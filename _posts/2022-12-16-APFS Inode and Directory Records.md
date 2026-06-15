@@ -5,7 +5,7 @@ series: "APFS Internals"
 series_part: 14
 categories: [file-systems, apfs]
 tags: [apfs, inodes, directories]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 Each APFS [_file system entry_](/post/2022/12/15/APFS-FSTrees) has both an _inode_ and _directory record_. The inode record stores metadata such as the entry’s timestamps, ownership, type, and permissions (among others). Directory records store information about where the entry is stored within the file system’s hierarchy. A single inode may be referenced by more than one directory record, meaning the same file or folder may be present at multiple paths in the file system, as is the case with hard links.
@@ -56,7 +56,7 @@ typedef struct j_inode_val {
 } j_inode_val_t;
 ```
 - `parent_id`: The identifier of the file system record for the parent directory
-- `private_id`: The unique identifier used by this file's data stream
+- `private_id`: The identifier used by this file's data stream; for an inode with no data stream, it equals the inode's own object identifier
 - `create_time`: The time that this record was created
 - `mod_time`: The time that this record was last modified
 - `change_time`: The time that this record's attributes were last modified
@@ -225,8 +225,8 @@ INO_EXT_TYPE_RESERVED_6 | 6 | | _reserved_
 INO_EXT_TYPE_FINDER_INFO | 7 | _32 bytes_ | Opaque data used by Finder
 INO_EXT_TYPE_DSTREAM | 8 | `j_dstream_t` | A data stream
 INO_EXT_TYPE_RESERVED_9 | 9 | | _reserved_
-INO_EXT_TYPE_DIR_STATS_KEY | 10 | `j_dir_stats_val_t` | Statistics about a directory
-INO_EXT_TYPE_FS_UUID | 11 | `uuid_t` | The UUID of a file system that's automatically mounted in this directory
+INO_EXT_TYPE_DIR_STATS_KEY | 10 | `uint64_t` | The object identifier used to look up the directory's statistics (`j_dir_stats_val_t`) record
+INO_EXT_TYPE_FS_UUID | 11 | `uuid_t` | The UUID of the volume that originally contained this inode
 INO_EXT_TYPE_UNRAW_SIZE | 12 | `uint64_t` | The unencrypted (raw) file size for a raw-encrypted inode
 INO_EXT_TYPE_SPARSE_BYTES | 13 | `uint64_t` | The number of sparse bytes in the data stream
 INO_EXT_TYPE_RDEV | 14 | `uint32_t` | The device identifier for a block- or character-special device
@@ -255,7 +255,7 @@ Name | Value | Description
 XF_DATA_DEPENDENT | 0x0001 | The data in this extended field depends on the file's data
 XF_DO_NOT_COPY | 0x0002 | When copying this file, omit this extended field from the copy
 XF_BTREE_TRACKED | 0x0004 | The extended field has an associated tracking record in a separate B-Tree
-XF_CHILDREN_INHERIT | 0x0008 | When creating a new entry in this directory, copy this extended field to the new directory entry
+XF_CHILDREN_INHERIT | 0x0008 | When creating a new inode in this directory, copy this extended field to the new inode
 XF_USER_FIELD | 0x0010 | This extended field was added by a user-space program
 XF_SYSTEM_FIELD | 0x0020 | This extended field was added by the kernel
 XF_RESERVED_40 | 0x0040 | _reserved_

@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 25
 categories: [file-systems, apfs]
 tags: [apfs, grafting, cryptex]
+last_modified_at: 2026-06-15
 ---
 
 Volume grafting is a mechanism introduced in macOS 13 that mounts a disk image's APFS contents as a subdirectory of an existing volume. This is the technology behind _Cryptexes_, the cryptographically sealed, graftable disk images used for Rapid Security Responses and system extensions. This post covers the graft lifecycle, constraints, and on-disk metadata.
@@ -25,7 +26,7 @@ The kernel builds a _blockmap LUT_ (lookup table) that maps logical block addres
 - The graft directory must be an existing, non-deleted directory that is not already a graft point
 - The host volume must not itself be a graft
 - On encrypted volumes, the file must use protection class C or D; cloned files and empty files are rejected
-- Volumes undergoing crypto transformation cannot graft (returns `ETXTBSY`, errno 26)
+- Volumes undergoing crypto transformation cannot graft
 
 ## Graft Extended Attributes
 
@@ -69,8 +70,8 @@ For sealed graft images (Cryptexes), the volume's root hash is verified against 
 {: style="margin-left: 0"}
 Type | Name | Description
 -----|------|------------
-4 | RSR Graft | Rapid Security Response (authentication always required)
-5 | Strict Graft | Authentication failure is fatal (kernel panic)
+4 | RSR Graft | Rapid Security Response (authentication required, except skipped on internal builds)
+5 | Strict Graft | Authentication failure is fatal: the mount is refused unconditionally and never degrades to an unauthenticated mount
 
 ### Phase 7: J-Object ID Range Reservation
 
@@ -89,13 +90,14 @@ The ungraft operation reverses the graft:
 3. Revoke vnodes belonging to the graft
 4. Detach the IOKit service node
 5. Unmount the grafted volume and container
-6. Clear graft-related inode flags on the directory and file
+6. Clear the graft inode flags (`INODE_IS_GRAFT_DIR` on the directory, `INODE_IS_GRAFT_FILE` on the file)
 7. Release crypto state if present
 
 The ungraft ioctl supports flags for ungrafting all grafts on a volume (bit 0) and forcing ungraft even when vnodes are in use (bit 1).
 
 ## Forensic Considerations
 
+- The principal on-disk artifact of an active graft is a set of inode flags stored in `j_inode_val_t.internal_flags` (not `bsd_flags`): `INODE_IS_GRAFT_FILE` (bit 49, `0x2000000000000`) on the host file, `INODE_IS_GRAFT_DIR` (bit 47, `0x800000000000`) on the graft directory, and `INODE_INSIDE_GRAFT` (bit 46, `0x400000000000`) on every inode belonging to the grafted tree. Bits 46 and 47 together identify any inode participating in a graft.
 - The graft extended attributes (`com.apple.fs.graft-*`) on a file indicate it was used as a graft image, even if no graft is currently active.
 - The `graft-vol-uuid` must match the current volume UUID, providing a way to verify the graft's provenance.
 - The reserved J-object ID range reveals which inode numbers belong to grafted content.

@@ -5,7 +5,7 @@ series: "APFS Internals"
 series_part: 6
 categories: [file-systems, apfs]
 tags: [apfs, btrees, indexing]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 In [yesterday's post](/post/2022/12/07/APFS-Checkpoint-Maps), we discussed Checkpoint Maps, the simple linear-time data structures that APFS uses to manage persistent, ephemeral objects.  Today, we will give a general overview of B-Trees and detail the layout and on-disk structures of B-Tree Nodes.  
@@ -102,6 +102,7 @@ typedef struct btree_node_phys {
     nloc_t btn_free_space;    // 0x2C
     nloc_t btn_key_free_list; // 0x30
     nloc_t btn_val_free_list; // 0x34
+    uint64_t btn_data[];      // 0x38
 } btree_node_phys_t;          // 0x38
 ```
 - `btn_o`: The node's [object header](/post/2022/12/01/Anatomy-of-an-APFS-Object)
@@ -112,6 +113,7 @@ typedef struct btree_node_phys {
 - `btn_free_space`: The location and size of contiguous free space between the key and value areas
 - `btn_key_free_list`: A linked list that tracks fragmented free space in the _key area_
 - `btn_val_free_list`: A linked list that tracks fragmented free space in the _value area_
+- `btn_data`: The node's storage area, holding the table of contents, keys, free space, and values; root nodes also store the trailing `btree_info_t` at the end of this area
 
 The total free space in a node is `btn_free_space.len` (contiguous shared space) + `btn_key_free_list.len` (fragmented key space) + `btn_val_free_list.len` (fragmented value space). When a node has sufficient total free space but lacks contiguous room for an insertion, APFS performs a _compaction_: all keys and values are repacked contiguously, eliminating fragmentation. The free lists use `nloc_t` entries as linked-list nodes (minimum 4 bytes each), threaded through the freed space itself.
 
@@ -174,7 +176,7 @@ By default, keys and values within B-Tree nodes are aligned to 8-byte boundaries
 B-Trees that have the `BTREE_ALLOW_GHOSTS` flag support two special entry types:
 
 - **Ghost entries** have a value offset of `0xFFFF`. These are entries with a key but no associated value. They serve as placeholders in the tree structure.
-- **Empty-value entries** use a value offset of `0xFFFE`. These represent entries whose value has been logically deleted but whose key slot is retained.
+- **Empty-value entries** use a value offset of `0xFFFE`. The value is treated as absent (`NULL`), but its reported length is `0xFFFE`, distinguishing it from a ghost (whose reported length is zero). These arise during key-only updates, not deletion.
 
 When parsing B-Tree nodes, check for these sentinel values before attempting to read value data; treating `0xFFFF` or `0xFFFE` as actual offsets will read garbage.
 

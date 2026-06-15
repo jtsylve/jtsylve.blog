@@ -5,7 +5,7 @@ series: "APFS Internals"
 series_part: 13
 categories: [file-systems, apfs]
 tags: [apfs, fstrees, volumes]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 Each APFS volume has a logical file system stored on disk as a collection of File System Objects. Unlike other [APFS Objects](/post/2022/12/01/Anatomy-of-an-APFS-Object), File System Objects consist of one or more File System Records, which are stored in the volume’s File System Tree (FS-Tree). Each record stores specific information about a file or directory. Analyzing each record and associating them with other records with the same identifier gives a complete picture of the file system entry. This post will discuss how these records are organized in the volume's FS-Tree.
@@ -55,7 +55,7 @@ SNAP_DIR_INO_NUM | 6 | Snapshot metadata directory
 PURGEABLE_DIR_INO_NUM | 7 | Purgeable file references (reserved, no actual directory)
 MIN_USER_INO_NUM | 16 | First inode number available for user content
 
-All inode numbers below 16 are reserved. On system volumes in a volume group, these same numbers are offset by `UNIFIED_ID_SPACE_MARK` (`0x0800000000000000`).
+All inode numbers below 16 are reserved. On system volumes in a volume group with the `APFS_FEATURE_VOLGRP_SYSTEM_INO_SPACE` flag set, these same numbers are offset by `UNIFIED_ID_SPACE_MARK` (`0x0800000000000000`).
 
 ## File System Record Types
 
@@ -69,9 +69,9 @@ APFS_TYPE_EXTENT | 2 | A physical extent record
 APFS_TYPE_INODE | 3 | An inode
 APFS_TYPE_XATTR | 4 | An extended attribute
 APFS_TYPE_SIBLING_LINK | 5 | A mapping from an inode to hard links
-APFS_TYPE_DSTREAM_ID | 6 | A data stream
+APFS_TYPE_DSTREAM_ID | 6 | A data stream identifier record
 APFS_TYPE_CRYPTO_STATE | 7 | A per-file encryption state
-APFS_TYPE_FILE_EXTENT | 8 | A physical extent record for a file
+APFS_TYPE_FILE_EXTENT | 8 | A file extent record (maps a file's logical offsets to physical blocks)
 APFS_TYPE_DIR_REC | 9 | A directory entry
 APFS_TYPE_DIR_STATS | 10 | Information about a directory
 APFS_TYPE_SNAP_NAME | 11 | The name of a snapshot
@@ -96,7 +96,7 @@ When sorting FS-Tree records, the comparison proceeds in three stages:
 
 1. Compare object identifiers (lower 60 bits of `obj_id_and_type`) numerically.
 2. Compare types (upper 4 bits) numerically. This groups all record types for a single file system object together.
-3. For directory records and extended attributes, compare the remaining key data. For `j_drec_hashed_key_t`, compare `name_len_and_hash` numerically first, then name bytes. For `j_xattr_key_t`, compare name bytes directly.
+3. For directory records and extended attributes, compare the remaining key data. For `j_drec_hashed_key_t`, compare `name_len_and_hash` numerically first, then name bytes. For `j_drec_key_t` and `j_xattr_key_t`, compare name bytes directly.
 
 This ordering ensures that all records for a single file system object (inode, directory entries, extents, xattrs, siblings) are stored adjacently in the tree, making it efficient to gather all information about a file in a single range scan.
 

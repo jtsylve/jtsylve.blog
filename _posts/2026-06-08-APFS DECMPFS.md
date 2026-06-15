@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 17
 categories: [file-systems, apfs]
 tags: [apfs, compression, decmpfs]
+last_modified_at: 2026-06-15
 ---
 
 APFS supports transparent file compression through the DECMPFS (Decompression File System) framework, shared with HFS+. Compressed files appear normal to applications but store their data in a compressed form on disk, significantly reducing space usage on system volumes. This post covers the on-disk format, compression types, and how to parse compressed files.
@@ -27,7 +28,7 @@ typedef struct {
     uint8_t attr_bytes[];        // 0x10
 } decmpfs_disk_header;
 ```
-- `compression_magic`: Must equal `DECMPFS_MAGIC` (`0x636d7066`). All fields are little-endian.
+- `compression_magic`: Must equal `DECMPFS_MAGIC` (`0x636d7066`). All fields are little-endian. The literal `0x636d7066` spells `'cmpf'` as a big-endian integer, but stored little-endian it appears on disk as the byte sequence `66 70 6d 63` (`'f'`,`'p'`,`'m'`,`'c'`).
 - `compression_type`: Identifies the compression algorithm and data location (see below)
 - `uncompressed_size`: The original uncompressed file size in bytes (for `DATALESS_PKG_CMPFS_TYPE` this field is reinterpreted: the low 40 bits hold the package size and the upper bits hold a child-entry count)
 - `attr_bytes`: Inline compressed data (for xattr-stored types), or empty for resource fork types
@@ -45,7 +46,7 @@ Type | Algorithm | Location | Notes
 5 | Dataless | none | Data fetched on demand (iCloud/network)
 7 | LZVN | xattr | Fast LZ77 variant (macOS 10.9+)
 8 | LZVN | resource fork | Larger LZVN files
-9 | None | xattr | Uncompressed variant in LZVN format
+9 | None | xattr | Uncompressed data stored inline
 10 | None | resource fork | 64KB chunks, uncompressed
 11 | LZFSE | xattr | High-efficiency entropy-coded (macOS 10.11+)
 12 | LZFSE | resource fork | Larger LZFSE files
@@ -78,15 +79,19 @@ These are placeholders for iCloud-synced or network-mounted content. The metadat
 
 ## Resource Fork Chunking
 
-Resource fork compression types split data into 65,536-byte (64 KB) chunks. Two chunking schemes exist:
+Resource fork compression types split data into 65,536-byte (64 KB) chunks, each compressed independently. The number of chunks is `ceil(uncompressed_size / 65536)`. Two chunking schemes exist, selected by `compression_type` alone (not by any field in the resource fork):
 
-### Scheme v1 (Type 4, zlib)
+### Fixed-offset scheme (Type 4, zlib)
 
-The resource fork data section begins with a chunk table: an array of `uint32_t` offsets, one per chunk plus a trailing entry. The compressed size of chunk `i` is `offsets[i+1] - offsets[i]`.
+The resource fork begins with a 256-byte classic HFS+ resource-fork header whose big-endian `data_offset` equals `0x104` (`struct decmpfs_rsrc_chunk_table_fixed`). At fixed resource-fork offset `0x104` a little-endian `uint32_t` chunk count is stored, and at `0x108` a chunk table follows: one 8-byte entry per chunk, each a `[offset, length]` pair of little-endian `uint32_t`s. Each chunk's `offset` is relative to `0x104`, so chunk `i`'s compressed bytes start at resource-fork byte `0x104 + offset[i]` and run for `length[i]` bytes. The resource fork ends with a constant 50-byte HFS+ resource-map trailer.
 
-### Scheme v2 (Types 8, 10, 12, 14)
+### Absolute-offset scheme (Types 8, 10, 12, 14)
 
-The resource fork contains a resource map with type `'cmpf'` (`0x636D7066`). At offset 260, a `uint32_t` chunk count is stored. Starting at offset 264, each chunk is described by an 8-byte entry containing a `uint32_t` offset and `uint32_t` size.
+There is no resource-fork header, no stored chunk count, and no `cmpf` resource map. At resource-fork byte `0`, an array of `num_chunks + 1` little-endian 4-byte absolute offsets begins (`struct decmpfs_rsrc_chunk_table_abs`), where `num_chunks = ceil(uncompressed_size / 65536)`. Read `offsets[i]` at byte `4 * i`. Chunk `i` spans `[offsets[i], offsets[i+1])`, so its compressed length is `offsets[i+1] - offsets[i]`. The final entry `offsets[num_chunks]` equals the total resource-fork size.
+
+### Stored chunks
+
+In both schemes a chunk that would not shrink under compression is stored uncompressed, flagged by a marker as its first byte. When a chunk's first byte equals the algorithm's marker, skip that byte and copy the remaining `length - 1` bytes verbatim; otherwise decompress with the type's algorithm. The markers are zlib/LZFSE/LZBITMAP = `0xFF`, LZVN = `0x06`, and none (type 10) = `0xCC`.
 
 ## Interaction with APFS
 

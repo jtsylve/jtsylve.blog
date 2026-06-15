@@ -5,7 +5,7 @@ series: "APFS Internals"
 series_part: 12
 categories: [file-systems, apfs]
 tags: [apfs, volumes, superblock]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 The _Volume Superblock_ is a data structure containing key information about an individual APFS volume. This post covers locating the Volume Superblock on disk and describes the on-disk format’s fields.
@@ -169,6 +169,7 @@ APFS_FEATURE_HARDLINK_MAP_RECORDS | 0x00000002 | The volume has sibling map reco
 APFS_FEATURE_DEFRAG | 0x00000004 | The volume supports defragmentation
 APFS_FEATURE_STRICTATIME | 0x00000008 | Strict access time tracking is enabled
 APFS_FEATURE_VOLGRP_SYSTEM_INO_SPACE | 0x00000010 | This volume supports the merged system/data inode namespace for volume groups
+APFS_FEATURE_EXTENDED_VEK_PROTECTION_CLASSES | 0x00001000 | Permits additional protection classes to be VEK-backed; recognized only as of APFS 3277 (macOS 27 beta), absent from the macOS 26.5.1 supported mask
 
 #### Incompatible Volume Feature Flags
 
@@ -190,7 +191,7 @@ APFS_INCOMPAT_EXPANDED_RECORDS | 0x00000200 | The volume uses expanded record ty
 
 #### Volume Flags
 
-_Volume Flags_ are used to indicate additional information about the volume's status. This bit-field is stored in the `apfs_flags` field of the Volume Superblock.
+_Volume Flags_ are used to indicate additional information about the volume's status. This bit-field is stored in the `apfs_fs_flags` field of the Volume Superblock.
 
 {: style="margin-left: 0"}
 Name | Value | Description
@@ -202,9 +203,9 @@ APFS_FS_ONEKEY | 0x00000008 | Files are encrypted with a single volume encryptio
 APFS_FS_SPILLEDOVER | 0x00000010 | The volume's allocation has exceeded its reserved space
 APFS_FS_RUN_SPILLOVER_CLEANER | 0x00000020 | The volume should reclaim blocks beyond its reservation
 APFS_FS_ALWAYS_CHECK_EXTENTREF | 0x00000040 | The extent reference tree must be consulted before overwriting any extent
-APFS_FS_RESERVED_80 | 0x00000080 | _reserved_
+APFS_FS_SEALED_VOLUME | 0x00000080 | The volume is a sealed read-only system volume (mirrors APFS_INCOMPAT_SEALED_VOLUME)
 APFS_FS_SCALEABLE_PFK | 0x00000100 | Files are encrypted with scalable per-file keys
-APFS_FS_RESERVED_200 | 0x00000200 | _reserved_
+APFS_FS_BOOTABLE | 0x00000200 | The volume is marked bootable (set/cleared via a dedicated volume control operation)
 APFS_FS_PENDING_OFFLINE_PURGE_CLEANUP | 0x00000400 | An offline purge was performed; cleanup needed on next mount
 APFS_FS_ATTRIBUTION_TAGS_ENABLED | 0x00000800 | Attribution tag tracking is enabled on this volume
 

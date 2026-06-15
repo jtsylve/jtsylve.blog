@@ -135,7 +135,7 @@ typedef struct apfs_reap_state {
     uint64_t last_pbn;    // 0x00
     xid_t cur_snap_xid;   // 0x08
     uint32_t phase;       // 0x10
-} apfs_reap_state_t;     // 0x14
+} __attribute__((packed)) apfs_reap_state_t;     // 0x14 (packed, no padding)
 ```
 - `last_pbn`: Physical block number where extent reaping last paused
 - `cur_snap_xid`: Transaction identifier of the snapshot currently being reaped

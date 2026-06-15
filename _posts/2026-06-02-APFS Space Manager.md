@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 9
 categories: [file-systems, apfs]
 tags: [apfs, space-manager, allocation]
+last_modified_at: 2026-06-15
 ---
 
 In our [earlier post on Containers](/post/2022/12/05/APFS-Containers), we introduced the Space Manager as the subsystem responsible for tracking which blocks are in use across all storage tiers and for allocating and freeing blocks on behalf of volumes. That post promised more detail in the future. Today we deliver on that promise by examining the Space Manager's on-disk structures, including its hierarchical chunk tracking system, free queues, internal pool, and allocation zones.
@@ -28,17 +29,11 @@ typedef struct chunk_info {
 ```
 - `ci_xid`: The transaction identifier of the last transaction that modified this chunk's bitmap
 - `ci_addr`: The first block address of this chunk
-- `ci_block_count`: The number of blocks in this chunk (lower 20 bits). Upper 12 bits hold flags (see below).
-- `ci_free_count`: The number of free blocks in this chunk (lower 20 bits)
+- `ci_block_count`: The number of blocks in this chunk. The count occupies the lower 20 bits (`CI_COUNT_MASK`, 0x000fffff); the upper 12 bits (`CI_COUNT_RESERVED_MASK`, 0xfff00000) are reserved and zero on disk.
+- `ci_free_count`: The number of free blocks in this chunk. As with `ci_block_count`, the count is the lower 20 bits (`CI_COUNT_MASK`) and the upper 12 bits (`CI_COUNT_RESERVED_MASK`) are reserved and zero on disk.
 - `ci_bitmap_addr`: The physical address of the allocation bitmap for this chunk, or zero if no bitmap has been allocated
 
-#### Chunk Info Flags
-
-{: style="margin-left: 0"}
-Name | Value | Description
------|-------|------------
-CI_PINNED_TO_MAIN | 0x04000000 | The chunk is within the metazone region (reserved for metadata)
-CI_ALLOC_ZONE_HINT | 0x08000000 | The chunk is currently assigned to an allocation zone
+The allocator does track two per-chunk markers, one for chunks reserved to the metazone (pinned-to-main) and one for chunks currently assigned to an allocation zone, but these are runtime in-memory bookkeeping. They have no on-disk representation in `chunk_info_t` and never appear in the count fields.
 
 ## Chunk Info Blocks and Chunk Address Blocks
 
@@ -159,7 +154,7 @@ typedef struct spaceman_allocation_zone_boundaries {
 } spaceman_allocation_zone_boundaries_t;
 ```
 
-When an allocation zone's current chunk becomes full, the allocator scans for a new chunk with sufficient free space, rotates the old boundaries into the circular buffer, and updates the current boundaries. The `CI_ALLOC_ZONE_HINT` flag on chunks tracks which chunk is currently assigned to a zone.
+When an allocation zone's current chunk becomes full, the allocator scans for a new chunk with sufficient free space, rotates the old boundaries into the circular buffer, and updates the current boundaries. Which chunk is currently assigned to a zone is tracked by a runtime in-memory allocation-zone marker with no on-disk representation; the persistent zone state lives in `saz_current_boundaries` and `saz_previous_boundaries`.
 
 ## Metazone
 
@@ -170,7 +165,7 @@ The metazone size scales with device capacity:
 - Devices smaller than 16 GB use a 512 MB metazone
 - Larger devices use a tiered formula that allocates progressively smaller fractions as device size increases, capped at one-quarter of the total device size
 
-Chunks within the metazone are marked with the `CI_PINNED_TO_MAIN` flag and are excluded from data allocation zones.
+Metazone membership is a contiguous region derived from device geometry, not a per-chunk on-disk flag. At runtime the allocator marks chunks reserved to the metazone as pinned-to-main and excludes them from data allocation zones, but that marker is in-memory state with no on-disk representation in `chunk_info_t`.
 
 ## spaceman_phys_t
 

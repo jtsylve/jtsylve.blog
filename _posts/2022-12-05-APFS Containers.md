@@ -5,7 +5,7 @@ series: "APFS Internals"
 series_part: 3
 categories: [file-systems, apfs]
 tags: [apfs, containers]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 APFS is a _pooled storage_, _transactional_, _copy-on-write_ file system. Its design relies on a core management layer known as the _Container_. APFS containers consist of a collection of several specialized components: The _Space Manager_, the _Checkpoint Areas_, and the _Reaper_. In today's post, we will give an overview of APFS containers and these components, including the mount procedure, transaction lifecycle, and container resize mechanisms.
@@ -29,7 +29,7 @@ Apple introduced APFS in 2017. The design of APFS takes many lessons from both H
 
 APFS containers provide pooled and tiered storage capabilities, without the need for a Core Storage layer. It presents one logical view of storage, whose blocks can be shared among multiple volumes without the need for pre-partitioning and pre-allocation of space. As volumes' storage requirements change over time, blocks are allocated or returned to the container. This allows for quite a bit of flexibility, as you can now have multiple volumes that serve different _roles_ without having to figure out their space requirements ahead of time. For example, you can now have more than one _system_ volume with different versions of macOS installed that can share the same user _data_ volume.
 
-It supports storage devices as small as 1 MiB in size (APFS on a 1.44 MiB HD floppy, anyone?) and has no apparent upper storage limit. It supports the sharing of blocks among as many as 100 volumes (with some limitations). In addition to that hard-coded upper maximum of 100 volumes, APFS requires that there can be no more than one volume per 512 MiB of storage space. This helps limit storage contention and reduces the amount of space needed to maintain file system metadata on-disk.
+It supports storage devices as small as 1 MiB in size (APFS on a 1.44 MiB HD floppy, anyone?) and has no apparent upper storage limit. It supports the sharing of blocks among as many as 100 volumes (with some limitations). This maximum is stored in the `nx_max_file_systems` field of the NX Superblock, which can never exceed the hard-coded ceiling of `NX_MAX_FILE_SYSTEMS` (100). When a container is created without an explicit value, `nx_max_file_systems` defaults to `min(ceil(container_size_bytes / 512 MiB), 100)`, so by default there is roughly one volume per 512 MiB of storage space. A caller may set the field explicitly up to the 100 cap. This default helps limit storage contention and reduces the amount of space needed to maintain file system metadata on-disk.
 
 The Space Manager keeps track of which blocks across storage tiers are in-use. It is also responsible for the allocation and freeing of blocks for volumes on-demand.
 
@@ -47,7 +47,7 @@ Both checkpoint areas normally occupy contiguous ranges of blocks on disk, but c
 
 ## Reaper
 
-Once a checkpoint transaction is successfully flushed to disk, APFS may choose to invalidate the oldest checkpoint. At this point, all newly unreferenced objects are subject to a process of garbage collection, where their blocks can be wiped and returned to the space manager for reuse. The Reaper is responsible for managing this garbage collection process, keeping track of the state of objects so that they may be freed across transactions.
+The Reaper deletes objects that are too large to remove in a single transaction, such as a volume or an object map. It tracks the deletion state across multiple transactions, saving its progress when a deletion cannot finish in one transaction and resuming in the next, which keeps the container consistent after every commit. Routine freeing of superseded blocks during normal checkpoint activity is handled by the space manager (via its free queues), not the Reaper.
 
 ## Mounting a Container
 
@@ -73,7 +73,7 @@ If any step fails, the implementation falls back to an older valid checkpoint fr
 
 ## Transaction Lifecycle
 
-APFS maintains a pool of up to 4 transaction objects. Each transaction progresses through these states:
+A transaction groups a set of object modifications that are committed atomically by a single checkpoint write. At most two transactions are active at once: one accepting modifications and one being written to disk. Each transaction progresses through these states:
 
 1. **Open:** A new transaction identifier is assigned from `nx_next_xid`. Participants (volume operations, space manager updates) enter the transaction and increment its active reference count. New reads and writes operate within this transaction.
 
@@ -121,4 +121,4 @@ If the shrink fails due to insufficient space, APFS computes and reports the min
 
 ## Conclusion
 
-Containers provide the core management layer of APFS using several specialized subsystems. The mount procedure ensures crash recovery by always having access to at least one valid checkpoint. The transaction lifecycle provides atomic commits through carefully ordered writes with storage barriers. Container resize enables live storage management without unmounting. Future posts in this series will discuss each of these subsystems in more detail, including the Space Manager's allocation algorithms and the Reaper's multi-phase garbage collection.
+Containers provide the core management layer of APFS using several specialized subsystems. The mount procedure ensures crash recovery by always having access to at least one valid checkpoint. The transaction lifecycle provides atomic commits through carefully ordered writes with storage barriers. Container resize enables live storage management without unmounting. Future posts in this series will discuss each of these subsystems in more detail, including the Space Manager's allocation algorithms and the Reaper's multi-transaction deletion of large objects.

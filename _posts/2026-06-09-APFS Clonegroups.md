@@ -72,7 +72,7 @@ typedef struct clonegroup_cookie_key {
 } clonegroup_cookie_key_t; // 0x11 (17 bytes, packed)
 ```
 
-The cookie value is a single byte set to 0. Its presence triggers the solo-group cleanup path.
+Note that the `cookie` field in the key is a `uint64_t`. The cookie record's _value_ is separate: it is a single byte set to 0. The record's presence triggers the solo-group cleanup path.
 
 ## Lifecycle
 

@@ -10,7 +10,8 @@ since grown into a 27-part reference covering the container layer, B-Trees, the
 volume and file-system layer, integrity and encryption, and APFS's advanced
 features. The original posts have been [revised and kept up to
 date](/post/2026/06/01/Revisiting-the-APFS-Series) rather than left as 2022
-snapshots.
+snapshots. The on-disk structures documented throughout are current as of macOS
+27 Beta (`apfs-3277.0.0.0.1`).
 
 {% assign outline = site.data.series | where: "name", "APFS Internals" | first %}
 {% assign published = site.posts | where: "series", "APFS Internals" %}

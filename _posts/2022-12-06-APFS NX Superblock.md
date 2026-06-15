@@ -5,7 +5,7 @@ series: "APFS Internals"
 series_part: 4
 categories: [file-systems, apfs]
 tags: [apfs, nx-superblock, containers]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 The _NX Superblock Object_ is a key component of APFS. It stores key information about the Container, such as the block size, total number of blocks, supported features, and the object IDs of various trees and other structures used to track and maintain other objects. The on-disk `nx_superblock_t` structure is used as the root source of information to locate all other objects in the checkpoint.  In this post, we will go into detail about this structure as well as discuss methodology that can be used to locate them on-disk.
@@ -104,7 +104,7 @@ typedef struct nx_superblock {
 - `nx_spaceman_oid`: The ephemeral object identifier of the container's _Space Manager_
 - `nx_omap_oid`: The physical object identifier of the container's _Object Map_
 - `nx_reaper_oid`: The ephemeral object identifier of the container's _Reaper_
-- `nx_test_type`: _Reserved_
+- `nx_test_type`: An internal-test field (the object type of a test object) that is zero in production containers
 - `nx_max_file_systems`: The maximum number of file system volumes that can be used with this container
 - `nx_fs_oid`: An array of virtual object identifiers for _File System Superblock Objects_
 - `nx_counters`: An array of performance counters
@@ -115,8 +115,8 @@ typedef struct nx_superblock {
 - `nx_fusion_uuid`: The universally unique identifier of the container's Fusion set, or zero for non-Fusion containers
 - `nx_keylocker`: The location of the container's keybag.
 - `nx_ephemeral_info`: An array of fields used in the management of ephemeral data
-- `nx_test_oid`: _Reserved_
-- `nx_fusion_mt_oid`: The physical object identifier of the _Fusion Middle Tree_ or zero on non-fusion drives
+- `nx_test_oid`: An internal-test field (the object identifier of a test object, or zero) that is zero in production containers
+- `nx_fusion_mt_oid`: The ephemeral object identifier of the _Fusion Middle Tree_ or zero on non-fusion drives
 - `nx_fusion_wbc_oid`: The ephemeral object identifier of the Fusion write-back cache state or zero on non-fusion drives
 - `nx_fusion_wbc`: The blocks used for the Fusion _write-back cache area_, or zero for non-Fusion drives
 - `nx_newest_mounted_version`: The highest APFS implementation version that has ever mounted this container (encoded as packed decimal: `major * 10^12 + minor * 10^9 + patch * 10^6 + micro * 10^3 + build`)

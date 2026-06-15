@@ -5,12 +5,12 @@ series: "APFS Internals"
 series_part: 26
 categories: [file-systems, apfs]
 tags: [apfs, fusion, containers]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 As we discussed in [an earlier post](/post/2022/12/05/APFS-Containers), Apple’s [Fusion Drives](https://en.wikipedia.org/wiki/Fusion_Drive) combine the storage capacity of a hard disk drive (HDD) with the faster access speed of a solid state drive (SSD). The HDD is the primary storage device, and the SSD acts as a cache for recently accessed data. However, the Fusion Drive does not have built-in caching logic, and the operating system treats the two drives as separate storage devices. Apple created [Core Storage](https://en.wikipedia.org/wiki/Core_Storage) to support the desired caching capabilities and the ability to pool the storage of each device into a single logical volume. APFS removes the need for Core Storage by having first-class support for this tiered storage model. This post will go into more detail about APFS _Fusion Containers_.
 
-_Note: As of macOS 15, Apple has removed Fusion Drive support from the APFS kernel extension. Containers with the `NX_INCOMPAT_FUSION` flag set now fail to mount. The structures documented here remain relevant for forensic analysis of existing Fusion containers but can no longer be created on current systems._
+_Note: As of macOS 26, Apple has removed Fusion Drive support from the APFS kernel extension. Because `NX_SUPPORTED_INCOMPAT_MASK` no longer includes `NX_INCOMPAT_FUSION`, containers with that flag set now fail the incompatible-features check and the mount is rejected with `EPROGMISMATCH` (75). The structures documented here remain relevant for forensic analysis of existing Fusion containers but can no longer be created on current systems._
 
 ## Physical Stores
 
@@ -122,6 +122,8 @@ For read caching, the data exists on both drives. For write caching, the data re
 
 ### Drain Behavior
 
+The drain timing, thresholds, and state machine described in this section are reverse-engineered implementation behavior, not part of the on-disk format. The format defines only the WBC structures and the stable offsets; when a drain occurs and how it is scheduled are properties of the kernel implementation and may differ across versions.
+
 The WBC periodically drains cached data from the SSD to the HDD. Drain operations are triggered when the dirty extent count exceeds a threshold (25% or 75% of WBC capacity) or on a periodic 60-second interval. The minimum drain size is 2 MB and the maximum is 8 MB. Drain items are sorted by block address for sequential HDD writes, and adjacent items are coalesced. Drains are temporarily suspended when the device is in a low power state or a degraded I/O state.
 
 The drain operates as a state machine:
@@ -171,6 +173,8 @@ FUSION_MT_DIRTY | `1 << 0` | The cached extent has been written to the SSD but n
 FUSION_MT_TENANT | `1 << 1` | The cached extent is actively in use by the caching algorithm
 
 ## Tier Migration
+
+The migration scheduling, cache-replacement policy, and capacity scaling described in this section are reverse-engineered implementation behavior, not part of the on-disk format. The format guarantees only the structures above; the GCLOCK algorithm, Bloom filter, and capacity thresholds reflect the kernel implementation and may differ across versions.
 
 APFS automatically promotes frequently accessed data from the HDD to the SSD and demotes infrequently accessed data in the reverse direction. This migration is managed by a Generalized CLOCK (GCLOCK) algorithm with a Bloom filter for access tracking.
 

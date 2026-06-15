@@ -17,7 +17,7 @@ The encryption rolling state object is referenced by the `apfs_er_state_oid` fie
 
 ## Phases
 
-Encryption rolling proceeds through three phases, tracked in the `ersb_flags` field:
+Encryption rolling proceeds through three phases, tracked in the `ersb_flags` field. The `er_phase_t` values below are not stored directly: they are shifted into bits 12-13 of `ersb_flags` (extract via `ERSB_FLAG_ER_PHASE_MASK` `0x3000` and `ERSB_FLAG_ER_PHASE_SHIFT` `12`), so `ER_PHASE_DATA_ROLL` (2) appears on disk as `0x2000`.
 
 {: style="margin-left: 0"}
 Phase | Value | Description

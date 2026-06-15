@@ -5,7 +5,7 @@ series: "APFS Internals"
 series_part: 21
 categories: [file-systems, apfs]
 tags: [apfs, wrapped-keys, encryption]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 In our last post, we discussed both [Volume and Container Keybags](/post/2022/12/21/APFS-Keybags) and how they protect wrapped _Volume Encryption_ and _Key Encryption Keys_. Depending on whether the encrypted volume was migrated from an HFS+ encrypted [Core Storage](https://en.wikipedia.org/wiki/Core_Storage) volume, there are subtle differences in how these keys are used. In this post, we will discuss the structure of these wrapped keys and how they can be used to access the raw _Volume Encryption Keys_ that encrypt data on the file system.
@@ -107,7 +107,7 @@ if (vek_size == 16) {
 }
 
 // Unwrap the VEK
-vek = rfc3394_unwrap(vek, wrapped_key)
+vek = rfc3394_unwrap(kek, wrapped_key)
 ```
 
 128-bit Core Storage `VEKs` must be extended to 256-bit encryption keys. This is accomplished by using the first 128 bits of the `SHA256` hash of the `VEK` and its UUID as the second half of the key.
@@ -149,7 +149,7 @@ typedef struct wrapped_crypto_state {
 - `major_version`: Currently 5
 - `minor_version`: Currently 0
 - `cpflags`: Crypto flags (`CP_RAW_KEY_WRAPPEDKEY` = 0x01 indicates a SEP-wrapped hardware key)
-- `persistent_class`: The file's [protection class](/post/2022/12/21/APFS-Keybags) (a value in the range 0-7; class 5 is unused and class 0 means inherit-from-directory)
+- `persistent_class`: The file's [protection class](/post/2022/12/21/APFS-Keybags). For a file, the valid stored class is 1-7; class 0 is the directory inherit-from-parent default and is rejected for a file, and class 5 is undefined
 - `key_os_version`: The OS version that created this key, packed as major/minor/build
 - `key_revision`: Key revision counter (incremented on re-wrap)
 - `key_len`: Length of the wrapped key data in bytes (max 128)
@@ -157,7 +157,7 @@ typedef struct wrapped_crypto_state {
 
 The `persistent_class` determines when the key is available for unwrapping (see [Protection Classes](/post/2022/12/21/APFS-Keybags)). The `key_os_version` is encoded as a packed integer: `(major << 24) | (minor << 16) | build`.
 
-On single-key volumes (`APFS_FS_ONEKEY`), per-file crypto state records do not exist. Instead, all files are decrypted with the volume-level VEK as an AES-XTS key, using the `crypto_id` from each `APFS_TYPE_FILE_EXTENT` record (`j_file_extent_val_t`) as the tweak.
+On single-key volumes (`APFS_FS_ONEKEY`), per-file crypto state objects are absent. A single placeholder `APFS_TYPE_CRYPTO_STATE` record still exists with the identifier `CRYPTO_SW_ID` (4), and all fields of its `j_crypto_val_t` are zero. Instead of per-file keys, all files are decrypted with the volume-level VEK as an AES-XTS key, using the `crypto_id` from each `APFS_TYPE_FILE_EXTENT` record (`j_file_extent_val_t`) as the tweak.
 
 ## Conclusion
 

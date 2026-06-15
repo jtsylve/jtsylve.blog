@@ -5,6 +5,7 @@ series: "APFS Internals"
 series_part: 27
 categories: [file-systems, apfs]
 tags: [apfs, telemetry, cloud]
+last_modified_at: 2026-06-15
 ---
 
 Speculative telemetry is an APFS feature that tracks the lifecycle of speculatively downloaded files: content fetched to local storage before the user explicitly requests it, such as files prefetched by iCloud or the App Store. This post covers the on-disk structures and state machine that enable this tracking.
@@ -62,7 +63,17 @@ Value | Name | Description
 
 ## Residency Reasons
 
-The `flags` field (bits 2-5) encodes why the file was speculatively downloaded. This allows the system to distinguish between different prefetch strategies and measure their effectiveness. The maximum reason value is 6.
+The `flags` field (bits 2-5) encodes why the file was speculatively downloaded. This allows the system to distinguish between different prefetch strategies and measure their effectiveness. APFS validates the range (0-6) but does not interpret the value; the semantic meanings are defined by the FileProvider framework:
+
+{: style="margin-left: 0"}
+Value | Name | Description
+------|------|------------
+1 | `recents` | Appeared in the user's recent-documents set
+2 | `speculativeUpdates` | Background prefetch by the speculative-downloads subsystem
+3 | `createdLocallyOrUserRequestedOnOlderBuild` | Legacy ambiguous reason from older builds
+4 | `providerRequested` | The cloud provider extension requested materialization
+5 | `createdLocally` | Created on this device (not downloaded)
+6 | `userRequested` | The user explicitly triggered the download
 
 ## Lifecycle
 
@@ -78,11 +89,11 @@ The `flags` field (bits 2-5) encodes why the file was speculatively downloaded. 
 
 6. **Purge**: When the file is fully deleted, the state transitions to `3` (Purged).
 
-7. **Event Reporting**: State transitions generate fsevents (event type 15) containing the purgeable size, residency reason, and pristine age (elapsed time since the last state change).
+7. **Event Reporting**: When the telemetry state has changed but the corresponding event has not yet been reported, the dirty bit (`SPEC_TELEM_FLAG_DIRTY`, bit 0 of `flags`) is set. It is cleared before applying the next state change.
 
 ## Directory Integration
 
-For directories with `INODE_MAINTAIN_DIR_STATS`, telemetry state is tracked at the directory level through expanded directory statistics flags (`DIR_STATS_TELEMETRY`, `0x100`). This enables aggregate reporting of speculative download effectiveness per directory hierarchy.
+For directories with `INODE_MAINTAIN_DIR_STATS`, telemetry participation is tracked at the directory level through the `telemetry_count` field of the expanded directory-statistics record (`j_dir_stats_expanded_val_t`), updated during reconciliation. This enables aggregate reporting of speculative download effectiveness per directory hierarchy. (Note that `0x100` in the directory-statistics flag set is `DIR_STATS_INITIALIZED`, which is unrelated to telemetry.)
 
 ## Inode Extended Fields
 

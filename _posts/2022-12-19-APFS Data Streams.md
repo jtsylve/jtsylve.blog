@@ -153,7 +153,7 @@ FEXT_ALLOCATED_UNWRITTEN | 0x02 | The extent's physical blocks are allocated but
 
 If the value of `phys_block_num` is zero, then the extent is _sparse_ and should be interpreted as containing all zero bytes.
 
-The `crypto_id` field is specific to encrypted volumes. For volumes using single-key encryption, it contains the AES-XTS tweak value. For per-file encryption, it matches the object identifier of the `j_crypto_val_t` record that describes the encryption state. New extents inherit their `crypto_id` from the `default_crypto_id` field of the containing `j_dstream_t`.
+The `crypto_id` field is specific to encrypted volumes. For volumes using single-key encryption, it contains the AES-XTS tweak value. For per-file encryption, it matches the object identifier of the `j_crypto_key_t` record that describes the encryption state. New extents inherit their `crypto_id` from the `default_crypto_id` field of the containing `j_dstream_t`.
 
 ## Physical Extent Records
 

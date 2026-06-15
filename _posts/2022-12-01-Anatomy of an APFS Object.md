@@ -5,7 +5,7 @@ series: "APFS Internals"
 series_part: 1
 categories: [file-systems, apfs]
 tags: [apfs, objects, blocks]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 APFS is a _copy-on-write_ file system, consisting of a set of immutable objects that are the fundamental building blocks of the file system's design.  _APFS objects_ are made up of one or more fixed-size _blocks_.  Block sizes are configurable at the time of formatting a new container.  Valid block sizes are any power-of-two sized value between 4 KiB and 64 KiB of data, and must always be an integer multiple of the block size of the underlying storage device.  At the time of this writing, the default (and thus most common) block size is 4 KiB.
@@ -96,7 +96,7 @@ The following is a list of the currently-known object types and their identifier
 | NX_SUPERBLOCK | 0x01 | Container Superblock | `nx_superblock_t` |
 | BTREE | 0x02 | B-Tree Root Node | `btree_node_phys_t` |
 | BTREE_NODE | 0x03 | B-Tree Node | `btree_node_phys_t` |
-| MTREE | 0x04 | M-Tree | _undocumented type_ |
+| MTREE | 0x04 | M-Tree | _legacy header type; absent from current validated builds_ |
 | SPACEMAN | 0x05 | Space Manager | `spaceman_phys_t` |
 | SPACEMAN_CAB | 0x06 | Space Manager Chunk-Info Address Block | `cib_addr_block` | 
 | SPACEMAN_CIB | 0x07 | Space Manager Chunk-Info Block | `chunk_info_block` |
@@ -115,13 +115,7 @@ The following is a list of the currently-known object types and their identifier
 | ER_RECOVERY_BLOCK | 0x1c | Rolling Encryption Recovery State | `er_recovery_block_phys_t` |
 | SNAP_META_EXT | 0x1d | Additional Snapshot Metadata | `snap_meta_ext_obj_phys_t` |
 | INTEGRITY_META | 0x1e | Integrity Metadata | `integrity_meta_phys_t` |
-| FEXT_TREE | 0x1f | File Extent Tree Object | `btree_node_phys_t` |
-| PFKUR_TREE | 0x20 | Per-File Key Upgrade Rotation Tree | `btree_node_phys_t` |
-| EVICT_MAPPING_TREE | 0x21 | Evict Mapping Tree | `btree_node_phys_t` |
-| DOC_ID_TREE | 0x22 | Document Identifier Tree | `btree_node_phys_t` |
-| GRAFT_BLOCKMAP_LUT_TREE | 0x23 | Graft Blockmap LUT | `btree_node_phys_t` |
-| SECONDARY_FSROOT_TREE | 0x24 | Secondary FS Root Tree | `btree_node_phys_t` |
-| CLONEGROUP_TREE | 0x25 | Clonegroup Tree | `btree_node_phys_t` |
+The constants 0x1f through 0x25 (`FEXT_TREE`, `PFKUR_TREE`, `EVICT_MAPPING_TREE`, `DOC_ID_TREE`, `GRAFT_BLOCKMAP_LUT_TREE`, `SECONDARY_FSROOT_TREE`, and `CLONEGROUP_TREE`) are not object types in their own right: each is used only as a subtype of a tree, appearing in `o_subtype` rather than `o_type`.  They are listed in the subtype table below.
 
 There are three additional known object types that use all 32-bits of the `o_type` header field and do not contain type flags.
 
@@ -149,7 +143,7 @@ B-Tree objects also contain subtypes, which help identify the specific purpose o
 | PFKUR_TREE | 0x20 | Per-File Key Upgrade Rotation | `pfkur_tree_key_t` | `pfkur_tree_val_t` |
 | EVICT_MAPPING_TREE | 0x21 | Evict Mapping | `paddr_t` | `evict_mapping_val_t` |
 | DOC_ID_TREE | 0x22 | Document Identifier | `uint32_t` | `uint64_t` |
-| GRAFT_BLOCKMAP_LUT_TREE | 0x23 | Graft Blockmap LUT | `graft_blockmap_lut_key_t` | `graft_blockmap_lut_val_t` |
+| GRAFT_BLOCKMAP_LUT_TREE | 0x23 | Graft Blockmap LUT | _in-memory only (not persisted)_ | _in-memory only (not persisted)_ |
 | SECONDARY_FSROOT_TREE | 0x24 | Secondary FS Root | `j_key_t` | _variable_ |
 | CLONEGROUP_TREE | 0x25 | Clonegroup | `clonegroup_key_t` | `clonegroup_val_t` |
 
@@ -189,7 +183,7 @@ When parsing type fields, the following masks separate the components:
 
 Object identifiers and transaction identifiers follow specific allocation rules:
 
-- New ephemeral and virtual objects are assigned monotonically increasing `oid` values from the container's `nx_next_oid` counter. The first 1024 identifiers (0 through 0x3FF) are reserved; `nx_next_oid` is initialized to 0x400 for new containers.
+- The first 1024 identifiers (0 through 0x3FF) are reserved (`OID_RESERVED_COUNT`) and must not be assigned to new objects; this reservation applies to physical, virtual, and ephemeral objects alike. New ephemeral and virtual objects are then assigned monotonically increasing `oid` values from the container's `nx_next_oid` counter, which is initialized to 0x400 for new containers.
 - `OID_INVALID` (0) represents an invalid or unset object identifier.
 - `OID_NX_SUPERBLOCK` (1) is reserved for the container superblock.
 - Transaction identifiers (`xid`) are also monotonically increasing from `nx_next_xid`. A zero `xid` is invalid. Exhausting the 64-bit `xid` space is treated as an unrecoverable error.

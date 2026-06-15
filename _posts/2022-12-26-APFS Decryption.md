@@ -5,7 +5,7 @@ series: "APFS Internals"
 series_part: 22
 categories: [file-systems, apfs]
 tags: [apfs, decryption, encryption]
-last_modified_at: 2026-06-01
+last_modified_at: 2026-06-15
 ---
 
 Now that we know how to parse the [File System Tree](/post/2022/12/15/APFS-FSTrees), [analyze keybags](/post/2022/12/21/APFS-Keybags), and [unwrap decryption keys](/post/2022/12/22/APFS-Wrapped-Keys), it's time to put it all together and learn how to decrypt file system metadata and file data on encrypted volumes in APFS.
@@ -93,8 +93,12 @@ Putting the pieces from our previous posts together, here is the full chain for 
 5. Decrypt the volume keybag using the volume’s UUID concatenated with itself.
 6. Find the `KB_TAG_VOLUME_UNLOCK_RECORDS` entry matching the user’s UUID. This contains the [wrapped KEK](/post/2022/12/22/APFS-Wrapped-Keys).
 7. Unwrap the KEK using the user’s password (via PBKDF2), then unwrap the VEK using the KEK (via RFC 3394).
-8. Decrypt FS-Tree nodes using the VEK with position-based tweaks.
-9. Decrypt file extents using the VEK with `crypto_id`-based tweaks.
+
+Two distinct operations are at play in steps 2 and 5. The keybag bytes are first decrypted (AES-XTS with a UUID-derived key, the widely-observed mechanism described above) to expose the keybag's entries; the individual wrapped keys held inside those entries (the VEK and KEK) are then unwrapped per RFC 3394. The spec documents only the RFC 3394 step, framing keybag access as key unwrapping and reserving AES-XTS for file and tree data.
+8. Decrypt FS-Tree nodes with position-based tweaks.
+9. Decrypt file extents with `crypto_id`-based tweaks.
+
+The VEK is not used directly to decrypt data. Per the spec's _Media Key Derivation_, a software-encrypted volume's data is protected with an AES-XTS _composite key_ derived from the unwrapped VEK and the volume UUID. Because the volume UUID is an input to that key, erasing the volume UUID (by destroying the volume superblock) renders the data unrecoverable even if the VEK is known.
 
 ## Secure Erasure
 
