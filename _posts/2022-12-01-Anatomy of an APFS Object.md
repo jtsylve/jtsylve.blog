@@ -115,6 +115,8 @@ The following is a list of the currently-known object types and their identifier
 | ER_RECOVERY_BLOCK | 0x1c | Rolling Encryption Recovery State | `er_recovery_block_phys_t` |
 | SNAP_META_EXT | 0x1d | Additional Snapshot Metadata | `snap_meta_ext_obj_phys_t` |
 | INTEGRITY_META | 0x1e | Integrity Metadata | `integrity_meta_phys_t` |
+
+
 The constants 0x1f through 0x25 (`FEXT_TREE`, `PFKUR_TREE`, `EVICT_MAPPING_TREE`, `DOC_ID_TREE`, `GRAFT_BLOCKMAP_LUT_TREE`, `SECONDARY_FSROOT_TREE`, and `CLONEGROUP_TREE`) are not object types in their own right: each is used only as a subtype of a tree, appearing in `o_subtype` rather than `o_type`.  They are listed in the subtype table below.
 
 There are three additional known object types that use all 32-bits of the `o_type` header field and do not contain type flags.
